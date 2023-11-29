@@ -18,18 +18,14 @@ java {
     }
 }
 
-tasks.withType<Jar> {
-    // Otherwise you'll get a "No main manifest attribute" error
+tasks.create("aocJar", type=Jar::class) {
+    group = "build"
+    archiveBaseName = "aoc"
     manifest {
         attributes["Main-Class"] = "dev.mtib.aoc23.AoCKt"
     }
-
-    // To avoid the duplicate handling strategy error
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    // To add all of the dependencies
     from(sourceSets.main.get().output)
-
     dependsOn(configurations.runtimeClasspath)
     from({
         configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }

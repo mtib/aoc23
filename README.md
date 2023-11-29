@@ -3,6 +3,6 @@
 ## How to run
 
 ```bash
-gradle jar
-java -jar app/build/libs/app.jar <day>
+gradle aocJar
+java -jar app/build/libs/aoc.jar <day>
 ```
