@@ -9,7 +9,7 @@ import dev.mtib.aoc23.utils.DayRunner
 fun main(args: Array<String>) {
     val day = args.getOrNull(0)?.toInt() ?: 1
 
-    println("Running day $day")
+    println("Running day $day\n")
 
     val dayRunner = when (day) {
         1 -> Day1()
@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
 }
 
 private fun runPart(day: DayRunner, part: Int) {
-    println("Part $part:")
+    println("\u001b[1mPart $part:\u001b[0m")
     // time runtime
     val start = System.currentTimeMillis()
     when (part) {
@@ -30,5 +30,5 @@ private fun runPart(day: DayRunner, part: Int) {
         else -> throw IllegalArgumentException("Part $part is not a valid part.")
     }
     val end = System.currentTimeMillis()
-    println("Runtime: ${end - start}ms\n")
+    println("\u001b[36mRuntime: ${end - start}ms\u001b[0m\n")
 }

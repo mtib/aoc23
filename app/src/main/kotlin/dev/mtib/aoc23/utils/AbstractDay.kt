@@ -1,14 +1,16 @@
 package dev.mtib.aoc23.utils
 
-import com.andreapivetta.kolor.Color
-import com.andreapivetta.kolor.Kolor
-
 abstract class AbstractDay(private val dayNumber: Int) : DaySolver, DayRunner {
     private val bufferedInput: Array<String>
+    private val printedLines: MutableList<String> = mutableListOf()
 
     init {
         val lines = getLines()
         bufferedInput = Array(lines.size) { lines[it] }
+    }
+
+    protected fun log(line: String) {
+        printedLines.add(line)
     }
 
     private fun getLines(): List<String> = readLines("app/src/main/resources/day${dayNumber}.txt")
@@ -21,18 +23,27 @@ abstract class AbstractDay(private val dayNumber: Int) : DaySolver, DayRunner {
         return null
     }
 
-    override fun runPart1() {
-        printSolution(solvePart1(bufferedInput))
+    final override fun runPart1() {
+        synchronized(printedLines) {
+            printedLines.clear()
+            printSolution(solvePart1(bufferedInput))
+        }
     }
 
-    override fun runPart2() {
-        printSolution(solvePart2(bufferedInput))
+    final override fun runPart2() {
+        synchronized(printedLines) {
+            printedLines.clear()
+            printSolution(solvePart2(bufferedInput))
+        }
     }
 
     private fun printSolution(solution: String?) {
+        if (printedLines.isNotEmpty()) {
+            println(printedLines.joinToString("\n") { "| $it" })
+        }
         when (solution) {
-            null -> println(Kolor.foreground("No solution found.", Color.RED))
-            else -> println("\u001b[1m${Kolor.foreground(solution, Color.YELLOW)}\u001B[0m")
+            null -> println("\u001b[31mNo solution found\u001b[0m")
+            else -> println("\u001b[1;33m${solution}\u001b[0m")
         }
     }
 }
