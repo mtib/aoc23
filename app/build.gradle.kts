@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.9.10"
+    id("org.jetbrains.kotlin.jvm") version "1.9.21"
     application
 }
 
@@ -9,13 +9,6 @@ repositories {
 
 dependencies {
 
-}
-
-// Apply a specific Java toolchain to ease working on different environments.
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(20))
-    }
 }
 
 tasks.create("aocJar", type=Jar::class) {
