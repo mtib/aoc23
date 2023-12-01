@@ -3,31 +3,37 @@
  */
 package dev.mtib.aoc23
 
+import dev.mtib.aoc23.day.DayModule
 import dev.mtib.aoc23.utils.AbstractDay
 import dev.mtib.aoc23.utils.DayRunner
+import org.koin.core.context.startKoin
+import org.koin.core.error.InstanceCreationException
+import org.koin.ksp.generated.module
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.NoSuchFileException
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-    val dayNumber = args.getOrNull(0)?.toInt() ?: 1
+    val koin = startKoin {
+        modules(DayModule().module)
+    }.koin
 
+    val dayNumber = args.getOrNull(0)?.toInt() ?: 1
     println("Running day $dayNumber\n")
 
     val day = try {
-        Class.forName("dev.mtib.aoc23.day.Day$dayNumber")
-            .getDeclaredConstructor()
-            .newInstance() as AbstractDay
-    } catch (e: InvocationTargetException) {
+        koin.getAll<AbstractDay>().find { it.dayNumber == dayNumber } ?: throw ClassNotFoundException()
+    } catch (e: InstanceCreationException) {
         val cause = e.cause
         if (cause is NoSuchFileException) {
             println("\u001b[31mNo input file found for day $dayNumber: ${cause.message}\u001b[0m")
         } else {
             println("\u001b[31mFailed to instantiation runner for day $dayNumber: ${cause?.toString() ?: e.toString()}\u001b[0m")
         }
-        return
+        exitProcess(1)
     } catch (e: ClassNotFoundException) {
         println("\u001b[31mNo solution found for day $dayNumber\u001b[0m")
-        return
+        exitProcess(2)
     }
 
     runPart(day, 1)

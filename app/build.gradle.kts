@@ -1,6 +1,11 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.9.21"
+    id("com.google.devtools.ksp") version "1.9.21-1.0.15"
     application
+}
+
+sourceSets.main {
+    java.srcDirs("build/generated/ksp/main/kotlin")
 }
 
 repositories {
@@ -8,7 +13,9 @@ repositories {
 }
 
 dependencies {
-
+    implementation("io.insert-koin:koin-core:3.5.0")
+    implementation("io.insert-koin:koin-annotations:1.3.0")
+    ksp("io.insert-koin:koin-ksp-compiler:1.3.0")
 }
 
 tasks.create("aocJar", type=Jar::class) {
