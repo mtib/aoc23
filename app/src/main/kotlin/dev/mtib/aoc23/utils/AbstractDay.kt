@@ -13,7 +13,7 @@ abstract class AbstractDay(private val dayNumber: Int) : DaySolver, DayRunner {
         printedLines.add(line)
     }
 
-    private fun getLines(): List<String> = readLines("app/src/main/resources/day${dayNumber}.txt")
+    private fun getLines(): List<String> = readLines("app/src/main/resources/day${dayNumber}.txt").filter { it.isNotBlank() }
 
     override fun solvePart1(input: Array<String>): String? {
         return null
