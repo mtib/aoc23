@@ -3,21 +3,35 @@
  */
 package dev.mtib.aoc23
 
-import dev.mtib.aoc23.day.Day1
+import dev.mtib.aoc23.utils.AbstractDay
 import dev.mtib.aoc23.utils.DayRunner
+import java.lang.reflect.InvocationTargetException
+import java.nio.file.NoSuchFileException
 
 fun main(args: Array<String>) {
-    val day = args.getOrNull(0)?.toInt() ?: 1
+    val dayNumber = args.getOrNull(0)?.toInt() ?: 1
 
-    println("Running day $day\n")
+    println("Running day $dayNumber\n")
 
-    val dayRunner = when (day) {
-        1 -> Day1()
-        else -> throw IllegalArgumentException("Day $day is not implemented yet.")
-    } as DayRunner
+    val day = try {
+        Class.forName("dev.mtib.aoc23.day.Day$dayNumber")
+            .getDeclaredConstructor()
+            .newInstance() as AbstractDay
+    } catch (e: InvocationTargetException) {
+        val cause = e.cause
+        if (cause is NoSuchFileException) {
+            println("\u001b[31mNo input file found for day $dayNumber: ${cause.message}\u001b[0m")
+        } else {
+            println("\u001b[31mFailed to instantiation runner for day $dayNumber: ${cause?.toString() ?: e.toString()}\u001b[0m")
+        }
+        return
+    } catch (e: ClassNotFoundException) {
+        println("\u001b[31mNo solution found for day $dayNumber\u001b[0m")
+        return
+    }
 
-    runPart(dayRunner, 1)
-    runPart(dayRunner, 2)
+    runPart(day, 1)
+    runPart(day, 2)
 }
 
 private fun runPart(day: DayRunner, part: Int) {
