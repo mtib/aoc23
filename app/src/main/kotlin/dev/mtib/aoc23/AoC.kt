@@ -25,11 +25,7 @@ fun main(args: Array<String>) {
         koin.getAll<AbstractDay>().find { it.dayNumber == dayNumber } ?: throw ClassNotFoundException()
     } catch (e: InstanceCreationException) {
         val cause = e.cause
-        if (cause is NoSuchFileException) {
-            println("\u001b[31mNo input file found for day $dayNumber: ${cause.message}\u001b[0m")
-        } else {
-            println("\u001b[31mFailed to instantiation runner for day $dayNumber: ${cause?.toString() ?: e.toString()}\u001b[0m")
-        }
+        println("\u001b[31mFailed to instantiation runner for day $dayNumber: ${cause?.toString() ?: e.toString()}\u001b[0m")
         exitProcess(1)
     } catch (e: ClassNotFoundException) {
         println("\u001b[31mNo solution found for day $dayNumber\u001b[0m")
