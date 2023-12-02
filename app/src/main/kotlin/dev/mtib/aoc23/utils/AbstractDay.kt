@@ -3,19 +3,23 @@ package dev.mtib.aoc23.utils
 import org.koin.core.annotation.Property
 
 abstract class AbstractDay(val dayNumber: Int) : DaySolver, DayRunner {
-    private val bufferedInput: Array<String>
+    private val bufferedInput: Array<String>?
     private val printedLines: MutableList<String> = mutableListOf()
 
     init {
         val lines = getLines()
-        bufferedInput = Array(lines.size) { lines[it] }
+        bufferedInput = if (lines != null) { Array(lines.size) { lines[it] } } else null
     }
 
     protected fun log(line: String) {
         printedLines.add(line)
     }
 
-    private fun getLines(): List<String> = readLines("app/src/main/resources/day${dayNumber}.txt").filter { it.isNotBlank() }
+    private fun getLines(): List<String>? = try {
+        readLines("app/src/main/resources/day${dayNumber}.txt").filter { it.isNotBlank() }
+    } catch (e: Exception) {
+        null
+    }
 
     override fun solvePart1(input: Array<String>): String? {
         return null
@@ -28,6 +32,10 @@ abstract class AbstractDay(val dayNumber: Int) : DaySolver, DayRunner {
     final override fun runPart1() {
         synchronized(printedLines) {
             printedLines.clear()
+            if (bufferedInput == null) {
+                println("\u001b[31mNo input file found for day $dayNumber\u001b[0m")
+                return
+            }
             printSolution(solvePart1(bufferedInput))
         }
     }
@@ -35,6 +43,10 @@ abstract class AbstractDay(val dayNumber: Int) : DaySolver, DayRunner {
     final override fun runPart2() {
         synchronized(printedLines) {
             printedLines.clear()
+            if (bufferedInput == null) {
+                println("\u001b[31mNo input file found for day $dayNumber\u001b[0m")
+                return
+            }
             printSolution(solvePart2(bufferedInput))
         }
     }
