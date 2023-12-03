@@ -80,12 +80,12 @@ class Day3 : AbstractDay(3) {
                     val y = lineIndex
                 }
             }
-        }.mapNotNull {
+        }.mapNotNull { gear ->
             val adjacentNumbers = mutableSetOf<NumberMatch>()
             for (yOffset in -1..1) {
                 for (xOffset in -1..1) {
-                    val x = it.x + xOffset
-                    val y = it.y + yOffset
+                    val x = gear.x + xOffset
+                    val y = gear.y + yOffset
                     if (y < 0 || y >= input.size || x < 0 || x >= input[y].length) {
                         continue
                     }
