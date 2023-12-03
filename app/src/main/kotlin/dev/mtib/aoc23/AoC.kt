@@ -6,12 +6,15 @@ package dev.mtib.aoc23
 import dev.mtib.aoc23.day.DayModule
 import dev.mtib.aoc23.utils.AbstractDay
 import dev.mtib.aoc23.utils.DayRunner
+import dev.mtib.aoc23.utils.DaySolver
 import org.koin.core.context.startKoin
 import org.koin.core.error.InstanceCreationException
 import org.koin.ksp.generated.module
-import java.lang.reflect.InvocationTargetException
-import java.nio.file.NoSuchFileException
+import kotlin.math.pow
 import kotlin.system.exitProcess
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.measureTime
 
 fun main(args: Array<String>) {
     val koin = startKoin {
@@ -32,19 +35,49 @@ fun main(args: Array<String>) {
         exitProcess(2)
     }
 
-    runPart(day, 1)
-    runPart(day, 2)
+    for (part in 1..2) {
+        runPart(day, part)
+        timePart(day, part, day.bufferedInput ?: emptyArray())
+        println("")
+    }
 }
 
 private fun runPart(day: DayRunner, part: Int) {
     println("\u001b[1mPart $part:\u001b[0m")
     // time runtime
-    val start = System.currentTimeMillis()
     when (part) {
         1 -> day.runPart1()
         2 -> day.runPart2()
         else -> throw IllegalArgumentException("Part $part is not a valid part.")
     }
-    val end = System.currentTimeMillis()
-    println("\u001b[36mRuntime: ${end - start}ms\u001b[0m\n")
 }
+
+val MIN_TIME_SPENT = 500.milliseconds
+const val MIN_RUNS = 20
+
+private fun timePart(day: DaySolver, part: Int, input: Array<String>) {
+    buildList<Duration> {
+        while (size < MIN_RUNS || reduce { acc, it -> acc + it } < MIN_TIME_SPENT) {
+            add(measureTime {
+                when (part) {
+                    1 -> day.solvePart1(input)
+                    2 -> day.solvePart2(input)
+                    else -> throw IllegalArgumentException("Part $part is not a valid part.")
+                }
+            })
+        }
+    }.let { durations ->
+        val average = durations.sumOf { it.inWholeMicroseconds }.toDouble() / durations.size
+        val standardDeviation =
+            kotlin.math.sqrt(durations.sumOf { (it.inWholeMicroseconds - average).pow(2) } / durations.size)
+        println(
+            "\u001b[36mRuntime: ${(average / 1000.0).toPrecision(1)}ms, σ: ${
+                (standardDeviation / 1000.0).toPrecision(
+                    1
+                )
+            }ms (${durations.size} runs)\u001b[0m"
+        )
+    }
+}
+
+private fun Double.toPrecision(precision: Int): Double = (this * 10.0.pow(precision)).toInt() / 10.0.pow(precision)

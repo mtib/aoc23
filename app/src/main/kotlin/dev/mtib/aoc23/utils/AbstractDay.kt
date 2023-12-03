@@ -1,14 +1,14 @@
 package dev.mtib.aoc23.utils
 
-import org.koin.core.annotation.Property
-
 abstract class AbstractDay(val dayNumber: Int) : DaySolver, DayRunner {
-    private val bufferedInput: Array<String>?
+    val bufferedInput: Array<String>?
     private val printedLines: MutableList<String> = mutableListOf()
 
     init {
         val lines = getLines()
-        bufferedInput = if (lines != null) { Array(lines.size) { lines[it] } } else null
+        bufferedInput = if (lines != null) {
+            Array(lines.size) { lines[it] }
+        } else null
     }
 
     protected fun log(line: String) {
