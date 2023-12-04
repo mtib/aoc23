@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("io.insert-koin:koin-core:3.5.0")
     implementation("io.insert-koin:koin-annotations:1.3.0")
     ksp("io.insert-koin:koin-ksp-compiler:1.3.0")
