@@ -3,7 +3,6 @@ package dev.mtib.aoc23.utils
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
-import java.lang.Exception
 import java.nio.file.NoSuchFileException
 
 abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : DaySolver, DayRunner {
@@ -17,7 +16,7 @@ abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : Day
     private fun getLines(): List<String>? {
         val inputPath = "app/src/main/resources/day${dayNumber}.txt"
         return try {
-            readLines(inputPath).filter { it.isNotBlank() }
+            readLines(inputPath)
         } catch (e: NoSuchFileException) {
             println("No input file found for day $dayNumber, fetching from adventofcode.com")
             val token = System.getenv("AOC_SESSION")
@@ -35,12 +34,12 @@ abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : Day
                 val response = client.newCall(request).execute()
                 val body = response.body!!.string()
                 File(inputPath).writeText(body)
-                body.lines().filter { it.isNotBlank() }
-            } catch(e: Exception) {
+                body.lines()
+            } catch (e: Exception) {
                 println("Error while fetching input file for day $dayNumber: ${e.javaClass.simpleName} ${e.message}")
                 null
             }
-        } catch (e : Exception) {
+        } catch (e: Exception) {
             println("Error while reading input file for day $dayNumber: ${e.javaClass.simpleName} ${e.message}")
             null
         }
@@ -54,26 +53,34 @@ abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : Day
         return null
     }
 
-    final override fun runPart1() {
+    private fun runPart(part: Int) {
         synchronized(printedLines) {
             printedLines.clear()
             if (bufferedInput == null) {
                 println("\u001b[31mNo input file found for day $dayNumber\u001b[0m")
                 return
             }
-            printSolution(solvePart1(bufferedInput!!))
+            printSolution(
+                try {
+                    when (part) {
+                        1 -> solvePart1(bufferedInput!!)
+                        2 -> solvePart2(bufferedInput!!)
+                        else -> throw IllegalArgumentException("Part $part is not a valid part.")
+                    }
+                } catch (e: Exception) {
+                    println("Error while running part 1: ${e.javaClass.simpleName} ${e.message}")
+                    null
+                }
+            )
         }
     }
 
+    final override fun runPart1() {
+        runPart(1)
+    }
+
     final override fun runPart2() {
-        synchronized(printedLines) {
-            printedLines.clear()
-            if (bufferedInput == null) {
-                println("\u001b[31mNo input file found for day $dayNumber\u001b[0m")
-                return
-            }
-            printSolution(solvePart2(bufferedInput!!))
-        }
+        runPart(2)
     }
 
     private fun printSolution(solution: String?) {

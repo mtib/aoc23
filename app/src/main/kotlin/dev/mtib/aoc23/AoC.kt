@@ -54,29 +54,35 @@ private fun runPart(day: DayRunner, part: Int) {
 
 val MIN_TIME_SPENT = 500.milliseconds
 const val MIN_RUNS = 20
+const val MAX_RUNS = 1000
 
 private fun timePart(day: DaySolver, part: Int, input: Array<String>) {
-    buildList<Duration> {
-        while (size < MIN_RUNS || reduce { acc, it -> acc + it } < MIN_TIME_SPENT) {
-            add(measureTime {
-                when (part) {
-                    1 -> day.solvePart1(input)
-                    2 -> day.solvePart2(input)
-                    else -> throw IllegalArgumentException("Part $part is not a valid part.")
-                }
-            })
+    try {
+        buildList<Duration> {
+            while (size < MIN_RUNS || reduce { acc, it -> acc + it } < MIN_TIME_SPENT) {
+                add(measureTime {
+                    when (part) {
+                        1 -> day.solvePart1(input)
+                        2 -> day.solvePart2(input)
+                        else -> throw IllegalArgumentException("Part $part is not a valid part.")
+                    }
+                })
+                if (size >= MAX_RUNS) break
+            }
+        }.let { durations ->
+            val average = durations.sumOf { it.inWholeMicroseconds }.toDouble() / durations.size
+            val standardDeviation =
+                kotlin.math.sqrt(durations.sumOf { (it.inWholeMicroseconds - average).pow(2) } / durations.size)
+            println(
+                "\u001b[36mRuntime: ${(average / 1000.0).toPrecision(1)}ms, σ: ${
+                    (standardDeviation / 1000.0).toPrecision(
+                        1
+                    )
+                }ms (${durations.size} runs)\u001b[0m"
+            )
         }
-    }.let { durations ->
-        val average = durations.sumOf { it.inWholeMicroseconds }.toDouble() / durations.size
-        val standardDeviation =
-            kotlin.math.sqrt(durations.sumOf { (it.inWholeMicroseconds - average).pow(2) } / durations.size)
-        println(
-            "\u001b[36mRuntime: ${(average / 1000.0).toPrecision(1)}ms, σ: ${
-                (standardDeviation / 1000.0).toPrecision(
-                    1
-                )
-            }ms (${durations.size} runs)\u001b[0m"
-        )
+    } catch (e: Exception) {
+        println("Error while timing part $part: ${e.javaClass.simpleName} ${e.message}")
     }
 }
 
