@@ -73,13 +73,23 @@ private fun timePart(day: DaySolver, part: Int, input: Array<String>) {
             val average = durations.sumOf { it.inWholeMicroseconds }.toDouble() / durations.size
             val standardDeviation =
                 kotlin.math.sqrt(durations.sumOf { (it.inWholeMicroseconds - average).pow(2) } / durations.size)
-            println(
-                "\u001b[36mRuntime: ${(average / 1000.0).toPrecision(1)}ms, σ: ${
-                    (standardDeviation / 1000.0).toPrecision(
-                        1
-                    )
-                }ms (${durations.size} runs)\u001b[0m"
-            )
+            if (average < 100) {
+                println(
+                    "\u001b[36mRuntime: ${(average).toPrecision(1)}µs, σ: ${
+                        (standardDeviation).toPrecision(
+                            2
+                        )
+                    }µs (${durations.size} runs)\u001b[0m"
+                )
+            } else {
+                println(
+                    "\u001b[36mRuntime: ${(average / 1000.0).toPrecision(1)}ms, σ: ${
+                        (standardDeviation / 1000.0).toPrecision(
+                            1
+                        )
+                    }ms (${durations.size} runs)\u001b[0m"
+                )
+            }
         }
     } catch (e: Exception) {
         println("Error while timing part $part: ${e.javaClass.simpleName} ${e.message}")
