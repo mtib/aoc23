@@ -68,7 +68,7 @@ abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : Day
                         else -> throw IllegalArgumentException("Part $part is not a valid part.")
                     }
                 } catch (e: Exception) {
-                    println("Error while running part $part: ${e.javaClass.simpleName} ${e.message}")
+                    println("Error while running part $part: ${e.stackTraceToString()}")
                     null
                 }
             )
