@@ -1,5 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.9.21"
+    kotlin("plugin.serialization") version "1.9.21"
     id("com.google.devtools.ksp") version "1.9.21-1.0.15"
     application
 }
@@ -17,9 +18,10 @@ dependencies {
     implementation("io.insert-koin:koin-core:3.5.0")
     implementation("io.insert-koin:koin-annotations:1.3.0")
     ksp("io.insert-koin:koin-ksp-compiler:1.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 }
 
-tasks.create("aocJar", type=Jar::class) {
+tasks.create("aocJar", type = Jar::class) {
     group = "build"
     archiveBaseName = "aoc"
     manifest {

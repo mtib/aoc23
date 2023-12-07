@@ -7,7 +7,7 @@ import org.koin.core.annotation.Single
 class Day1 : AbstractDay(1) {
 
     override fun solvePart1(input: Array<String>): String? {
-        return input.sumOf {
+        return input.filter { it.isNotBlank() }.sumOf {
             it.find { it.isDigit() }!!.digitToInt() * 10 + it.findLast { it.isDigit() }!!.digitToInt()
         }.toString()
     }
@@ -28,7 +28,7 @@ class Day1 : AbstractDay(1) {
         val regexp = Regex("(${spelledDigits.joinToString("|")}|[0-9])")
         val reversedRegexp = Regex("(${spelledDigits.joinToString("|") { it.reversed() }}|[0-9])")
 
-        fun digitToValue (digit: String): Int {
+        fun digitToValue(digit: String): Int {
             return when {
                 digit in spelledDigits -> spelledDigits.indexOf(digit) + 1
                 digit.length == 1 -> digit[0].digitToInt()
