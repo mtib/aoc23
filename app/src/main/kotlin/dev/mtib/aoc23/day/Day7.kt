@@ -36,65 +36,68 @@ class Day7 : AbstractDay(7) {
             fun from(input: String): Hand {
                 val (cardString, winningString) = input.split(" ")
                 val cards = cardString.asIterable().map { char -> Card.entries.find { it.label == char }!! }
-                require(cards.size == 5)
                 return Hand(cards, winningString.toInt())
             }
         }
+
+        val groupings by lazy { cards.groupingBy { it }.eachCount() }
 
         fun cardsToString() = cards.joinToString("") { it.label.toString() }
 
         fun isFiveOfKind(withJoker: Boolean = false): Boolean {
             if (withJoker) {
-                return cards.groupBy { it.value }.values.any { it.size == 5 - if (it[0] != Card.JACK) cards.count { it == Card.JACK } else 0 }
+                return groupings.any { it.value == 5 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0 }
             }
-            return cards.groupBy { it.value }.values.any { it.size == 5 }
+            return groupings.any { it.value == 5 }
         }
 
         fun isFourOfKind(withJoker: Boolean = false): Boolean {
             if (withJoker) {
-                return cards.groupBy { it.value }.values.any { it.size == 4 - if (it[0] != Card.JACK) cards.count { it == Card.JACK } else 0 }
+                return groupings.any { it.value == 4 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0 }
             }
-            return cards.groupBy { it.value }.values.any { it.size == 4 }
+            return groupings.any { it.value == 4 }
         }
 
         fun isFullHouse(withJoker: Boolean = false): Boolean {
             if (withJoker) {
                 var badLastCardType: Card? = null
-                return (cards.groupBy { it.value }.values.any { it.size == 3 } &&
-                        cards.groupBy { it.value }.values.any { it.size == 2 }) ||
-                        (cards.groupBy { it.value }.values.any {
-                            if (it.size == 3 - if (it[0] != Card.JACK) cards.count { it == Card.JACK } else 0) {
-                                badLastCardType = it[0]
+                return (groupings.any { it.value == 3 } &&
+                        groupings.any { it.value == 2 }) ||
+                        (groupings.any {
+                            if (it.value == 3 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0) {
+                                badLastCardType = it.key
                                 true
                             } else {
                                 false
                             }
                         } &&
-                                cards.groupBy { it.value }.values.any { it.size == 2 && it[0] != Card.JACK && it[0] != badLastCardType }) ||
-                        (cards.groupBy { it.value }.values.any { it.size == 3 && it[0] != Card.JACK } &&
-                                cards.groupBy { it.value }.values.any { it.size == 2 - if (it[0] != Card.JACK) cards.count { it == Card.JACK } else 0 })
+                                groupings.any { it.value == 2 && it.key != Card.JACK && it.key != badLastCardType }) ||
+                        (groupings.any { it.value == 3 && it.key != Card.JACK } &&
+                                groupings.any {
+                                    it.value == 2 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0
+                                })
             }
-            return cards.groupBy { it.value }.values.any { it.size == 3 } &&
-                    cards.groupBy { it.value }.values.any { it.size == 2 }
+            return groupings.any { it.value == 3 } &&
+                    groupings.any { it.value == 2 }
         }
 
         fun isThreeOfKind(withJoker: Boolean = false): Boolean {
             if (withJoker) {
-                return cards.groupBy { it.value }.values.any { it.size == 3 - if (it[0] != Card.JACK) cards.count { it == Card.JACK } else 0 }
+                return groupings.any { it.value == 3 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0 }
             }
-            return cards.groupBy { it.value }.values.any { it.size == 3 }
+            return groupings.any { it.value == 3 }
         }
 
         fun isTwoPair(withJoker: Boolean = false): Boolean {
             // Jokers wouldn't make this, they'd turn it into 3 of a kind instead
-            return cards.groupBy { it.value }.values.filter { it.size == 2 }.size == 2
+            return groupings.filter { it.value == 2 }.size == 2
         }
 
         fun isOnePair(withJoker: Boolean = false): Boolean {
             if (withJoker) {
-                return cards.groupBy { it.value }.values.any { it.size == 2 - if (it[0] != Card.JACK) cards.count { it == Card.JACK } else 0 }
+                return groupings.any { it.value == 2 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0 }
             }
-            return cards.groupBy { it.value }.values.any { it.size == 2 }
+            return groupings.any { it.value == 2 }
         }
 
         enum class HandType {
