@@ -149,43 +149,7 @@ class Day7 : AbstractDay(7) {
 
     override fun solvePart2(input: Array<String>): String? {
         val hands = input.filter { it.isNotBlank() }.map { Hand.from(it) }
-
-        require(Hand.from("3444J 1").compare(Hand.from("3344J 1")) == 1) { "3444J 1 > 3344J 1" }
-        require(
-            Hand.from("T55J5 1").getHandType(true) == Hand.HandType.FOUR_OF_KIND
-        ) { "T55J5 1 is four of a kind" }
-        require(
-            Hand.from("KTJJT 1").getHandType(true) == Hand.HandType.FOUR_OF_KIND
-        ) { "KTJJT 1 is four of a kind" }
-        require(
-            Hand.from("QQQJA 1").getHandType(true) == Hand.HandType.FOUR_OF_KIND
-        ) { "QQQJA 1 is four of a kind" }
-        require(
-            Hand.from("T55J5 1").compare(Hand.from("QQQJA 1"), true) == -1
-        ) { "T55J5 1 < QQQJA 1" }
-        require(
-            Hand.from("QQQJA 1").compare(Hand.from("KTJJT 1"), true) == -1
-        ) { "QQQJA 1 < KTJJT 1" }
-        require(Hand.from("J2233 1").getHandType(true) == Hand.HandType.FULL_HOUSE) { "J2233 is full house" }
-        require(
-            Hand.from("JJ234 1").getHandType(true) == Hand.HandType.THREE_OF_KIND
-        ) { "JJ234 is three of a kind (${Hand.from("JJ234 1").getHandType(true)})" }
-        require(
-            Hand.from("JJ233 1").getHandType(true) == Hand.HandType.FOUR_OF_KIND
-        ) { "JJ233 is four of a kind" }
-        require(
-            Hand.from("JJJ23 1").getHandType(true) == Hand.HandType.FOUR_OF_KIND
-        ) { "JJJ23 is four of a kind" }
-        require(
-            Hand.from("JJJA2 1").compare(Hand.from("JJAA2 1"), true) == -1
-        ) { "JJJA2 1 > JJAA2 1" }
-        require(
-            Hand.from("AAKJT 1").getHandType(true) == Hand.HandType.THREE_OF_KIND
-        ) { "AAKJT is three of a kind (${Hand.from("AAKJT 1").getHandType(true)})" }
-
-        return hands.sortedWith { o1, o2 -> o1.compare(o2, true) }.also {
-            log(it.joinToString("\n| ") { "${it.cardsToString()} ${it.getHandType(true)}" })
-        }.withIndex()
+        return hands.sortedWith { o1, o2 -> o1.compare(o2, true) }.withIndex()
             .sumOf { (index, hand) -> hand.winnings.toLong() * (index.toLong() + 1) }.toString()
     }
 }
