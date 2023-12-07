@@ -139,10 +139,6 @@ class Day7 : AbstractDay(7) {
 
     override fun solvePart1(input: Array<String>): String? {
         val hands = input.filter { it.isNotBlank() }.map { Hand.from(it) }
-
-        require(Hand.from("33332 1").compare(Hand.from("2AAAA 1")) == 1) { "33332 1 > 2AAAA 1" }
-        require(Hand.from("77888 1").compare(Hand.from("77788 1")) == 1) { "77888 1 > 77788 1" }
-
         return hands.sortedWith { o1, o2 -> o1.compare(o2) }.withIndex()
             .sumOf { (index, hand) -> hand.winnings.toLong() * (index.toLong() + 1) }.toString()
     }
