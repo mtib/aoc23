@@ -90,7 +90,7 @@ private fun timePart(day: DaySolver, part: Int, input: Array<String>) {
             val average = durations.sumOf { it.inWholeMicroseconds }.toDouble() / durations.size
             val standardDeviation =
                 kotlin.math.sqrt(durations.sumOf { (it.inWholeMicroseconds - average).pow(2) } / durations.size)
-            if (average < 100) {
+            if (average < 1000) {
                 println(
                     "\u001b[36mRuntime: ${(average).toPrecision(1)}µs, σ: ${
                         (standardDeviation).toPrecision(
