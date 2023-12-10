@@ -7,6 +7,8 @@ import dev.mtib.aoc23.day.Day10.Position.Companion.UP
 import dev.mtib.aoc23.utils.AbstractDay
 import dev.mtib.aoc23.utils.MiscRunner
 import org.koin.core.annotation.Single
+import kotlin.math.absoluteValue
+import kotlin.time.measureTime
 
 @Single
 class Day10 : AbstractDay(10), MiscRunner {
@@ -19,6 +21,17 @@ class Day10 : AbstractDay(10), MiscRunner {
             fun cardinalDirections(): List<DifferentialPosition> {
                 return listOf(UP, RIGHT, DOWN, LEFT)
             }
+
+            val KEY_DIRECTIONS = mapOf(
+                'S' to cardinalDirections(),
+                '-' to listOf(LEFT, RIGHT),
+                '|' to listOf(UP, DOWN),
+                'F' to listOf(DOWN, RIGHT),
+                '7' to listOf(LEFT, DOWN),
+                'J' to listOf(LEFT, UP),
+                'L' to listOf(UP, RIGHT),
+                '.' to emptyList(),
+            )
         }
 
         override fun toString(): String {
@@ -44,39 +57,13 @@ class Day10 : AbstractDay(10), MiscRunner {
     }
 
     class AbsolutePosition(x: Int, y: Int, val input: Array<String>) : Position(x, y) {
-        fun symbol(): Char {
-            return input[y][x]
+        val symbol by lazy { input[y][x] }
+        val potentialNeighborDirections by lazy {
+            KEY_DIRECTIONS[symbol]!!
         }
-
-        override fun toString(): String {
-            return "'${symbol()}'@($x,$y)"
-        }
-
-        operator fun plus(other: DifferentialPosition): AbsolutePosition {
-            return AbsolutePosition(x + other.x, y + other.y, input)
-        }
-
-        operator fun minus(other: DifferentialPosition): AbsolutePosition {
-            return AbsolutePosition(x - other.x, y - other.y, input)
-        }
-
-        fun potentialNeighborDirections(): List<DifferentialPosition> {
-            return when (symbol()) {
-                'S' -> cardinalDirections()
-                '-' -> listOf(LEFT, RIGHT)
-                '|' -> listOf(UP, DOWN)
-                'F' -> listOf(DOWN, RIGHT)
-                '7' -> listOf(LEFT, DOWN)
-                'J' -> listOf(LEFT, UP)
-                'L' -> listOf(UP, RIGHT)
-                '.' -> emptyList()
-                else -> throw IllegalArgumentException("Invalid symbol ${symbol()}")
-            }
-        }
-
-        fun connectedNeighbors(): List<AbsolutePosition> {
-            val potentialDirections = potentialNeighborDirections()
-            return potentialDirections.filter {
+        val connectedNeighbors by lazy {
+            val potentialDirections = potentialNeighborDirections
+            potentialDirections.filter {
                 try {
                     (this + it).potentialNeighborDirections().contains(-it)
                 } catch (e: StringIndexOutOfBoundsException) {
@@ -88,8 +75,28 @@ class Day10 : AbstractDay(10), MiscRunner {
                 .map { this + it }
         }
 
-        fun toSubGridPositions(): Array<SubGridPosition> {
-            return arrayOf(
+        override fun toString(): String {
+            return "'${symbol}'@($x,$y)"
+        }
+
+        operator fun plus(other: DifferentialPosition): AbsolutePosition {
+            return AbsolutePosition(x + other.x, y + other.y, input)
+        }
+
+        operator fun minus(other: DifferentialPosition): AbsolutePosition {
+            return AbsolutePosition(x - other.x, y - other.y, input)
+        }
+
+        fun potentialNeighborDirections(): List<DifferentialPosition> {
+            return potentialNeighborDirections
+        }
+
+        fun connectedNeighbors(): List<AbsolutePosition> {
+            return connectedNeighbors
+        }
+
+        fun toSubGridPositions(): Collection<SubGridPosition> {
+            return listOf(
                 SubGridPosition(x, y, input),
                 SubGridPosition(x + 1, y, input),
                 SubGridPosition(x + 1, y + 1, input),
@@ -104,7 +111,7 @@ class Day10 : AbstractDay(10), MiscRunner {
 
     class SubGridPosition(x: Int, y: Int, val input: Array<String>) : Position(x, y) {
         /**
-         * i.e. bottom right
+         * i.e. bottom right square
          */
         fun toAbsolutePosition(): AbsolutePosition {
             if (x < 0 || y < 0 || x >= input[0].length || y >= input.size) {
@@ -139,6 +146,7 @@ class Day10 : AbstractDay(10), MiscRunner {
         }
 
         companion object {
+            /** top right corner */
             fun fromAbsolutePosition(position: AbsolutePosition): SubGridPosition {
                 return SubGridPosition(position.x, position.y, position.input)
             }
@@ -197,96 +205,102 @@ class Day10 : AbstractDay(10), MiscRunner {
         val unenclosed: Set<AbsolutePosition>,
     )
 
-    fun enclosedNodes(input: Array<String>, pathNodes: List<AbsolutePosition>): Enclosed {
-        data class BreakCheck(
-            val c1: AbsolutePosition?,
-            val d1: DifferentialPosition,
-            val c2: AbsolutePosition?,
-            val d2: DifferentialPosition,
-            val d: DifferentialPosition,
-        )
+    data class BreakCheck(
+        val c1: AbsolutePosition?,
+        val d1: DifferentialPosition,
+        val c2: AbsolutePosition?,
+        val d2: DifferentialPosition,
+        val d: DifferentialPosition,
+    )
 
+    fun enclosedNodes(input: Array<String>, pathNodes: List<AbsolutePosition>): Enclosed {
+        val startEnclosedNodes = System.currentTimeMillis()
+        val allPositions = input.withIndex().flatMap { (y, line) ->
+            line.withIndex().map { (x, _) ->
+                AbsolutePosition(x, y, input)
+            }
+        }.toSet()
         val pathNodesSet = pathNodes.toSet()
-        val subgridPositions = buildList {
-            for (x in 1..input[0].length step 2) {
-                for (y in 1..input.size step 2) {
-                    val consider = SubGridPosition(x, y, input)
-                    if (consider.getAdjacentAbsolutePositions().all { it !in pathNodesSet }) {
-                        add(SubGridPosition(x, y, input))
-                    }
-                }
+        val subgridPositions = buildList<SubGridPosition> {
+            for (x in 0..input[0].length) {
+                add(SubGridPosition(x, 0, input))
+                add(SubGridPosition(x, input.size, input))
+            }
+            for (y in 0..input.size) {
+                add(SubGridPosition(0, y, input))
+                add(SubGridPosition(input[0].length, y, input))
             }
         }
-        val knownEnclosed = mutableSetOf<SubGridPosition>()
-        val knownUnenclosed =
-            subgridPositions.filter { it.isEdgeNode() }.toMutableSet()
-
-        subgridPositions.forEach {
-            if (it in knownEnclosed || it in knownUnenclosed) {
+        val knownUnenclosed = mutableSetOf<SubGridPosition>()
+        val startSubgridIteration = System.currentTimeMillis()
+        var countInterestingIterations = 0
+        var numberOfInterestingVisits = 0
+        var numberOfBreakChecks = 0
+        subgridPositions.forEach { subgridPosition ->
+            if (subgridPosition in knownUnenclosed) {
                 return@forEach
             }
+            countInterestingIterations += 1
             val visited = mutableSetOf<SubGridPosition>()
-            val toVisit = mutableSetOf(it)
+            val toVisit = mutableSetOf(subgridPosition)
             while (toVisit.isNotEmpty()) {
                 val current = toVisit.random()
-                if (current.isEdgeNode() || current in knownEnclosed || current in knownEnclosed) {
+                toVisit.remove(current)
+
+                if (current in knownUnenclosed) {
                     visited.add(current)
                     break
                 }
-                toVisit.remove(current)
+
+                numberOfInterestingVisits += 1
                 val bottomRight = current.toAbsolutePositionOrNull()
                 val topRight = (current + UP).toAbsolutePositionOrNull()
                 val bottomLeft = (current + LEFT).toAbsolutePositionOrNull()
                 val topLeft = (current + UP + LEFT).toAbsolutePositionOrNull()
-
-                val closeFullGridCells = listOf(
-                    bottomRight,
-                    topRight,
-                    bottomLeft,
-                    topLeft
-                )
-                closeFullGridCells.forEach {
-                    if (it != null && it !in pathNodes) {
-                        it.toSubGridPositions().forEach {
-                            if (it !in visited && it != current) {
-                                toVisit.add(it)
-                            }
-                        }
-                    }
-                }
                 listOf(
                     BreakCheck(bottomLeft, RIGHT, bottomRight, LEFT, DOWN),
                     BreakCheck(topLeft, RIGHT, topRight, LEFT, UP),
                     BreakCheck(topRight, DOWN, bottomRight, UP, RIGHT),
                     BreakCheck(topLeft, DOWN, bottomLeft, UP, LEFT),
-                ).forEach {
-                    if (it.c1 != null && it.c2 != null && it.c1 in pathNodes && it.c2 in pathNodes) {
-                        if (!it.c1.potentialNeighborDirections().contains(it.d1) && !it.c2.potentialNeighborDirections()
-                                .contains(it.d2)
+                ).forEach { breakCheck ->
+                    val squeeze = current + breakCheck.d
+                    if (squeeze in visited || squeeze.isEdgeNode()) {
+                        return@forEach
+                    }
+                    val c1InPathNodes = breakCheck.c1 in pathNodesSet
+                    val c2InPathNodes = breakCheck.c2 in pathNodesSet
+                    if (breakCheck.c1 != null && breakCheck.c2 != null && c1InPathNodes && c2InPathNodes) {
+                        numberOfBreakChecks += 1
+                        if (!breakCheck.c1.potentialNeighborDirections()
+                                .contains(breakCheck.d1) && !breakCheck.c2.potentialNeighborDirections()
+                                .contains(breakCheck.d2)
                         ) {
-                            val squeeze = current + it.d
-                            if (squeeze !in visited) {
-                                toVisit.add(squeeze)
-                            }
+                            toVisit.add(squeeze)
                         }
+                    }
+                    if (!(c1InPathNodes && c2InPathNodes)) {
+                        toVisit.add(squeeze)
                     }
                 }
                 visited.add(current)
             }
-
-            if (visited.any {
-                    it.isEdgeNode() || it in knownUnenclosed
-                }) {
-                knownUnenclosed.addAll(visited)
-            } else {
-                knownEnclosed.addAll(visited)
-            }
+            knownUnenclosed.addAll(visited)
         }
+        val endOfIteration = System.currentTimeMillis()
 
+        /*
+        println("Interesting iterations: $countInterestingIterations")
+        println("Interesting visits: $numberOfInterestingVisits (avg: ${numberOfInterestingVisits / countInterestingIterations})")
+        println("Break checks: $numberOfBreakChecks (avg: ${numberOfBreakChecks / countInterestingIterations})")
+        println("Setup time: ${startSubgridIteration - startEnclosedNodes}ms")
+        println("Subgrid iteration: ${endOfIteration - startSubgridIteration}ms")
+        println("Unenclosed nodes: ${knownUnenclosed.size}")
+        */
+
+        val (enclosed, unenclosed) = allPositions.partition { SubGridPosition.fromAbsolutePosition(it) !in knownUnenclosed }
         return Enclosed(
-            enclosed = knownEnclosed.map { it.toAbsolutePosition() }
-                .filter { it !in pathNodes }.toSet(),
-            unenclosed = knownUnenclosed.map { it.toAbsolutePositionOrNull() }.filterNotNull().toSet(),
+            enclosed = enclosed.filter { it !in pathNodesSet }.toSet(),
+            unenclosed = unenclosed.toSet()
         )
     }
 
@@ -305,6 +319,7 @@ class Day10 : AbstractDay(10), MiscRunner {
     }
 
     override fun solvePart2(input: Array<String>): Any? {
+        /*
         val startPos = input.withIndex().map { (sy, it) ->
             val sx = it.indexOf('S')
             if (sx != -1) {
@@ -316,6 +331,31 @@ class Day10 : AbstractDay(10), MiscRunner {
         val fill = floodFill(input, startPos)
         val pathNodes = fill.distances.filterKeys { fill.entrances[it]!!.size == 2 }
         return enclosedNodes(input, pathNodes.keys.toList()).enclosed.size
+         */
+        return shoelace(input)
+    }
+
+    fun shoelace(input: Array<String>): Int {
+        val startPos = input.asSequence().withIndex().map { (sy, it) ->
+            val sx = it.indexOf('S')
+            if (sx != -1) {
+                AbsolutePosition(sx, sy, input)
+            } else {
+                null
+            }
+        }.firstNotNullOf { it }
+        val path = buildList<AbsolutePosition> {
+            add(startPos)
+            var next = startPos.connectedNeighbors[0]
+            while (next != startPos) {
+                add(next)
+                next = next.connectedNeighbors.filter { asReversed()[1] != it }[0]
+            }
+        }
+        val area = path.asSequence().zipWithNext().map { (a, b) ->
+            (b.x - a.x) * (b.y + a.y)
+        }.sum() / 2
+        return area.absoluteValue - path.size / 2 + 1
     }
 
     fun prettyPrint(
@@ -384,6 +424,11 @@ class Day10 : AbstractDay(10), MiscRunner {
         val maxNode = fill.distances.filterKeys { fill.entrances[it]!!.size == 2 }.maxBy { it.value }.key
         val enclosed = enclosedNodes(input, pathNodes)
         prettyPrint(input, pathNodes, maxNode, enclosed.enclosed)
+
+        val shoelaceTime = measureTime {
+            println("Shoelace area: ${shoelace(input)}")
+        }
+        println("Shoelace: ${shoelaceTime}")
     }
 }
 

@@ -10,6 +10,7 @@ import kotlin.math.pow
 import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 
 fun main(args: Array<String>) {
@@ -20,6 +21,7 @@ fun main(args: Array<String>) {
     when (val arg = args.getOrNull(0)) {
         null -> runLastDay()
         "all" -> runAllDays()
+        "timeall" -> timeAllDays()
         else -> runDay(arg.toInt())
     }
 }
@@ -27,6 +29,65 @@ fun main(args: Array<String>) {
 private fun runLastDay() {
     val day = GlobalContext.get().getAll<AbstractDay>().maxByOrNull { it.dayNumber } ?: throw ClassNotFoundException()
     runDay(day.dayNumber)
+}
+
+private fun timeAllDays() {
+    val days = GlobalContext.get().getAll<AbstractDay>().sortedBy { it.dayNumber }
+    val timings = days.associateWith { day ->
+        println("Timing day ${day.dayNumber}\n")
+        val dayTimings = (1..2).associateWith { part ->
+            val result = timePart(day, part, day.bufferedInput ?: emptyArray())
+            println("Part $part: $result")
+            result
+        }
+        println("")
+        dayTimings
+    }
+    val penalty = 15.seconds.inWholeMicroseconds.toDouble()
+    val worstDay = timings.maxByOrNull { (_, dayTimings) ->
+        dayTimings.values.sumOf { it?.averageMicroseconds ?: penalty }
+    }!!
+    val worstPart1 = timings.maxByOrNull { (_, dayTimings) ->
+        dayTimings[1]?.averageMicroseconds ?: penalty
+    }!!.let { (day, dayTimings) ->
+        day to dayTimings[1]!!
+    }
+    val worstPart2 = timings.maxByOrNull { (_, dayTimings) ->
+        dayTimings[2]?.averageMicroseconds ?: penalty
+    }!!.let { (day, dayTimings) ->
+        day to dayTimings[2]!!
+    }
+    val totalRuntime = timings.values.sumOf { dayTimings ->
+        dayTimings.values.sumOf { it?.averageMicroseconds ?: penalty }
+    }
+    val bestDay = timings.minByOrNull { (_, dayTimings) ->
+        dayTimings.values.sumOf { it?.averageMicroseconds ?: penalty }
+    }!!.let { (day, dayTimings) ->
+        day to dayTimings.values.sumOf { it?.averageMicroseconds ?: penalty }
+    }
+
+    println("Total runtime: ${(totalRuntime / 1000.0).toPrecision(1)}ms")
+    println("Best day: ${bestDay.first.dayNumber} (${(bestDay.second).toPrecision(1)}µs)")
+    println(
+        "Worst day: ${worstDay.key.dayNumber} (${
+            worstDay.value.values.sumOf { it?.averageMicroseconds ?: penalty } / 1000.0.pow(
+                1.0
+            ).toPrecision(1)
+        }ms)")
+    println(
+        "Worst part 1: ${worstPart1.first.dayNumber} (${
+            (worstPart1.second.averageMicroseconds / 1000.0).toPrecision(
+                1
+            )
+        }ms)"
+    )
+    println(
+        "Worst part 2: ${worstPart2.first.dayNumber} (${
+            (worstPart2.second.averageMicroseconds / 1000.0).toPrecision(
+                1
+            )
+        }ms)"
+    )
 }
 
 private fun runAllDays() {
@@ -53,7 +114,8 @@ private fun runDay(dayNumber: Int) {
     for (part in 1..2) {
         runPart(day, part)
         Knowledge.KnowledgeFile.createDay(day.yearNumber, day.dayNumber, part.toLong())
-        timePart(day, part, day.bufferedInput ?: emptyArray())
+        val runtime = timePart(day, part, day.bufferedInput ?: emptyArray())
+        println(runtime)
         println("")
     }
 
@@ -77,7 +139,31 @@ val MIN_TIME_SPENT = 500.milliseconds
 const val MIN_RUNS = 20
 const val MAX_RUNS = 1000
 
-private fun timePart(day: DaySolver, part: Int, input: Array<String>) {
+data class RunResult(val averageMicroseconds: Double, val standardDeviationMicroseconds: Double, val runs: Int) {
+    fun getAverageString(): String {
+        return if (averageMicroseconds < 1000) {
+            "${(averageMicroseconds).toPrecision(1)}µs"
+        } else {
+            "${(averageMicroseconds / 1000.0).toPrecision(1)}ms"
+        }
+    }
+
+    fun getStandardDeviationString(): String {
+        return if (standardDeviationMicroseconds < 1000) {
+            "${(standardDeviationMicroseconds).toPrecision(2)}µs"
+        } else {
+            "${(standardDeviationMicroseconds / 1000.0).toPrecision(1)}ms"
+        }
+    }
+
+    override fun toString(): String {
+        return "\u001b[36mRuntime: ${getAverageString()}, σ: ${
+            getStandardDeviationString()
+        } (${runs} runs)\u001b[0m"
+    }
+}
+
+private fun timePart(day: DaySolver, part: Int, input: Array<String>): RunResult? {
     try {
         buildList<Duration> {
             while (size < MIN_RUNS || reduce { acc, it -> acc + it } < MIN_TIME_SPENT) {
@@ -94,27 +180,12 @@ private fun timePart(day: DaySolver, part: Int, input: Array<String>) {
             val average = durations.sumOf { it.inWholeMicroseconds }.toDouble() / durations.size
             val standardDeviation =
                 kotlin.math.sqrt(durations.sumOf { (it.inWholeMicroseconds - average).pow(2) } / durations.size)
-            if (average < 1000) {
-                println(
-                    "\u001b[36mRuntime: ${(average).toPrecision(1)}µs, σ: ${
-                        (standardDeviation).toPrecision(
-                            2
-                        )
-                    }µs (${durations.size} runs)\u001b[0m"
-                )
-            } else {
-                println(
-                    "\u001b[36mRuntime: ${(average / 1000.0).toPrecision(1)}ms, σ: ${
-                        (standardDeviation / 1000.0).toPrecision(
-                            1
-                        )
-                    }ms (${durations.size} runs)\u001b[0m"
-                )
-            }
+            return RunResult(average, standardDeviation, durations.size)
         }
     } catch (e: Exception) {
         println("Error while timing part $part: ${e.javaClass.simpleName} ${e.message}")
     }
+    return null
 }
 
 private fun Double.toPrecision(precision: Int): Double = (this * 10.0.pow(precision)).toInt() / 10.0.pow(precision)
