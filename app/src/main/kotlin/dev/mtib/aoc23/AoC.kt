@@ -1,10 +1,7 @@
 package dev.mtib.aoc23
 
 import dev.mtib.aoc23.day.DayModule
-import dev.mtib.aoc23.utils.AbstractDay
-import dev.mtib.aoc23.utils.DayRunner
-import dev.mtib.aoc23.utils.DaySolver
-import dev.mtib.aoc23.utils.Knowledge
+import dev.mtib.aoc23.utils.*
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.error.InstanceCreationException
@@ -58,6 +55,11 @@ private fun runDay(dayNumber: Int) {
         Knowledge.KnowledgeFile.createDay(day.yearNumber, day.dayNumber, part.toLong())
         timePart(day, part, day.bufferedInput ?: emptyArray())
         println("")
+    }
+
+    if (day is MiscRunner) {
+        println("\u001b[1mMisc:\u001b[0m")
+        day.misc(day.bufferedInput ?: emptyArray())
     }
 }
 
