@@ -93,6 +93,8 @@ class Knowledge {
                 val days = years.getOrPut(year.toString()) { emptyMap() }.toMutableMap()
                 val parts = days.getOrPut(day.toString()) { emptyMap() }.toMutableMap()
                 parts[part.toString()] = dayKnowledge
+                days[day.toString()] = parts
+                years[year.toString()] = days
                 KnowledgeFile(years).save()
             }
         }
