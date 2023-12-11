@@ -6,7 +6,7 @@ import org.koin.core.annotation.Single
 @Single
 class Day9 : AbstractDay(9) {
 
-    fun extrapolateForwards(report: Array<Long>): Long {
+    private fun extrapolateForwards(report: Array<Long>): Long {
         val sequences = buildList<Array<Long>> {
             add(report)
 
@@ -28,7 +28,7 @@ class Day9 : AbstractDay(9) {
         return lastDiagonal.last()
     }
 
-    fun extrapolateBackwards(report: Array<Long>): Long {
+    private fun extrapolateBackwards(report: Array<Long>): Long {
         val sequences = buildList<Array<Long>> {
             add(report)
 

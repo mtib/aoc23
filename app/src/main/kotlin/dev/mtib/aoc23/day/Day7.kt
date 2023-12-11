@@ -40,25 +40,25 @@ class Day7 : AbstractDay(7) {
             }
         }
 
-        val groupings by lazy { cards.groupingBy { it }.eachCount() }
+        private val groupings by lazy { cards.groupingBy { it }.eachCount() }
 
         fun cardsToString() = cards.joinToString("") { it.label.toString() }
 
-        fun isFiveOfKind(withJoker: Boolean = false): Boolean {
+        private fun isFiveOfKind(withJoker: Boolean = false): Boolean {
             if (withJoker) {
                 return groupings.any { it.value == 5 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0 }
             }
             return groupings.any { it.value == 5 }
         }
 
-        fun isFourOfKind(withJoker: Boolean = false): Boolean {
+        private fun isFourOfKind(withJoker: Boolean = false): Boolean {
             if (withJoker) {
                 return groupings.any { it.value == 4 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0 }
             }
             return groupings.any { it.value == 4 }
         }
 
-        fun isFullHouse(withJoker: Boolean = false): Boolean {
+        private fun isFullHouse(withJoker: Boolean = false): Boolean {
             if (withJoker) {
                 var badLastCardType: Card? = null
                 return (groupings.any { it.value == 3 } &&
@@ -81,19 +81,19 @@ class Day7 : AbstractDay(7) {
                     groupings.any { it.value == 2 }
         }
 
-        fun isThreeOfKind(withJoker: Boolean = false): Boolean {
+        private fun isThreeOfKind(withJoker: Boolean = false): Boolean {
             if (withJoker) {
                 return groupings.any { it.value == 3 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0 }
             }
             return groupings.any { it.value == 3 }
         }
 
-        fun isTwoPair(withJoker: Boolean = false): Boolean {
+        private fun isTwoPair(withJoker: Boolean = false): Boolean {
             // Jokers wouldn't make this, they'd turn it into 3 of a kind instead
             return groupings.filter { it.value == 2 }.size == 2
         }
 
-        fun isOnePair(withJoker: Boolean = false): Boolean {
+        private fun isOnePair(withJoker: Boolean = false): Boolean {
             if (withJoker) {
                 return groupings.any { it.value == 2 - if (it.key != Card.JACK) groupings[Card.JACK] ?: 0 else 0 }
             }
@@ -110,7 +110,7 @@ class Day7 : AbstractDay(7) {
             HIGH_CARD
         }
 
-        fun getHandType(withJoker: Boolean = false): HandType {
+        private fun getHandType(withJoker: Boolean = false): HandType {
             return when {
                 isFiveOfKind(withJoker) -> HandType.FIVE_OF_KIND
                 isFourOfKind(withJoker) -> HandType.FOUR_OF_KIND

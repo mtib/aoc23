@@ -51,13 +51,15 @@ class Day2 : AbstractDay(2) {
         val games = input.map { s -> parseLine(s) }
 
         val sumOfPossibleGamesIds = games.filter {
-            it.turns.all { turn -> turn.result.all { (cube, count) ->
-                when (cube) {
-                    Cube.Red -> count <= 12
-                    Cube.Green -> count <= 13
-                    Cube.Blue -> count <= 14
+            it.turns.all { turn ->
+                turn.result.all { (cube, count) ->
+                    when (cube) {
+                        Cube.Red -> count <= 12
+                        Cube.Green -> count <= 13
+                        Cube.Blue -> count <= 14
+                    }
                 }
-            } }
+            }
         }.sumOf { it.number }
 
         return sumOfPossibleGamesIds.toString()
@@ -73,13 +75,9 @@ class Day2 : AbstractDay(2) {
                 }
             }
             for (turn in it.turns) {
-                if (acc == null) {
-                    acc = turn.result
-                } else {
-                    acc = acc.map { (cube, count) ->
-                        cube to max(count, turn.result[cube] ?: 0)
-                    }.toMap()
-                }
+                acc = acc?.map { (cube, count) ->
+                    cube to max(count, turn.result[cube] ?: 0)
+                }?.toMap() ?: turn.result
             }
             acc!!.values.reduce { productAcc, i -> productAcc * i }
         }

@@ -5,12 +5,28 @@ import okhttp3.Request
 import java.io.File
 import java.nio.file.NoSuchFileException
 
+typealias dbg = AbstractDay.() -> Unit
+
 abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : DaySolver, DayRunner {
     val bufferedInput: Array<String>? by lazy { getLines()?.toTypedArray() }
     private val printedLines: MutableList<String> = mutableListOf()
 
-    protected fun log(line: String) {
-        printedLines.add(line)
+    fun log(line: String) {
+        if (mode == Mode.RUNNING) {
+            printedLines.addAll(line.lines())
+        }
+    }
+
+    enum class Mode {
+        RUNNING, TIMING
+    }
+
+    private var mode = Mode.TIMING
+
+    fun debug(block: AbstractDay.() -> Unit) {
+        if (mode == Mode.RUNNING) {
+            block.invoke(this)
+        }
     }
 
     private fun getLines(): List<String>? {
@@ -60,6 +76,7 @@ abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : Day
                 println("\u001b[31mNo input file found for day $dayNumber\u001b[0m")
                 return
             }
+            mode = Mode.RUNNING
             printSolution(
                 try {
                     when (part) {
@@ -73,6 +90,7 @@ abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : Day
                 },
                 part
             )
+            mode = Mode.TIMING
         }
     }
 

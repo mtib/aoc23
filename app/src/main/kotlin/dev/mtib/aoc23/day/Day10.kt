@@ -159,7 +159,7 @@ class Day10 : AbstractDay(10), MiscRunner {
         val visited: Int
     )
 
-    fun floodFill(input: Array<String>, startPosition: AbsolutePosition): FloodFill {
+    private fun floodFill(input: Array<String>, startPosition: AbsolutePosition): FloodFill {
         val visited = mutableSetOf<AbsolutePosition>()
         val toVisit = mutableListOf(startPosition)
         val distanceMap = mutableMapOf<AbsolutePosition, Int>()
@@ -213,7 +213,7 @@ class Day10 : AbstractDay(10), MiscRunner {
         val d: DifferentialPosition,
     )
 
-    fun enclosedNodes(input: Array<String>, pathNodes: List<AbsolutePosition>): Enclosed {
+    private fun enclosedNodes(input: Array<String>, pathNodes: List<AbsolutePosition>): Enclosed {
         val startEnclosedNodes = System.currentTimeMillis()
         val allPositions = input.withIndex().flatMap { (y, line) ->
             line.withIndex().map { (x, _) ->
@@ -335,7 +335,7 @@ class Day10 : AbstractDay(10), MiscRunner {
         return shoelace(input)
     }
 
-    fun shoelace(input: Array<String>): Int {
+    private fun shoelace(input: Array<String>): Int {
         val startPos = input.asSequence().withIndex().map { (sy, it) ->
             val sx = it.indexOf('S')
             if (sx != -1) {
@@ -358,7 +358,7 @@ class Day10 : AbstractDay(10), MiscRunner {
         return area.absoluteValue - path.size / 2 + 1
     }
 
-    fun prettyPrint(
+    private fun prettyPrint(
         input: Array<String>,
         path: Collection<AbsolutePosition> = emptyList(),
         part1Solution: AbsolutePosition? = null,
