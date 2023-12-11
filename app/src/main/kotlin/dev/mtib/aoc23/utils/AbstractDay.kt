@@ -50,7 +50,8 @@ abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : Day
                 val response = client.newCall(request).execute()
                 val body = response.body!!.string()
                 File(inputPath).writeText(body)
-                body.lines()
+                // Normalises line endings, ensures same behaviour
+                readLines(inputPath)
             } catch (e: Exception) {
                 println("Error while fetching input file for day $dayNumber: ${e.javaClass.simpleName} ${e.message}")
                 null
