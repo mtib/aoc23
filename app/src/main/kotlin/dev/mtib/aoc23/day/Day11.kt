@@ -73,9 +73,9 @@ class Day11 : AbstractDay(11) {
                     null
                 }
             }
-        }.flatten().toTypedArray()
+        }.flatten()
         return galaxies.flatMapIndexed { i, a ->
-            galaxies.slice(i + 1..<galaxies.size).mapNotNull { b ->
+            galaxies.drop(i + 1).mapNotNull { b ->
                 if (a != b) {
                     Pair(a, b)
                 } else {

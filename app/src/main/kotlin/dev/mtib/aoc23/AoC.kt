@@ -70,9 +70,9 @@ private fun timeAllDays() {
     println("Best day: ${bestDay.first.dayNumber} (${(bestDay.second).toPrecision(1)}µs)")
     println(
         "Worst day: ${worstDay.key.dayNumber} (${
-            worstDay.value.values.sumOf { it?.averageMicroseconds ?: penalty } / 1000.0.pow(
+            (worstDay.value.values.sumOf { it?.averageMicroseconds ?: penalty } / 1000.0.pow(
                 1.0
-            ).toPrecision(1)
+            )).toPrecision(1)
         }ms)")
     println(
         "Worst part 1: ${worstPart1.first.dayNumber} (${
