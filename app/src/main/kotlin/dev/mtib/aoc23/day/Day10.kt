@@ -6,6 +6,7 @@ import dev.mtib.aoc23.day.Day10.Position.Companion.RIGHT
 import dev.mtib.aoc23.day.Day10.Position.Companion.UP
 import dev.mtib.aoc23.utils.AbstractDay
 import dev.mtib.aoc23.utils.MiscRunner
+import dev.mtib.aoc23.utils.dbg
 import org.koin.core.annotation.Single
 import kotlin.math.absoluteValue
 import kotlin.time.measureTime
@@ -288,14 +289,14 @@ class Day10 : AbstractDay(10), MiscRunner {
         }
         val endOfIteration = System.currentTimeMillis()
 
-        /*
-        println("Interesting iterations: $countInterestingIterations")
-        println("Interesting visits: $numberOfInterestingVisits (avg: ${numberOfInterestingVisits / countInterestingIterations})")
-        println("Break checks: $numberOfBreakChecks (avg: ${numberOfBreakChecks / countInterestingIterations})")
-        println("Setup time: ${startSubgridIteration - startEnclosedNodes}ms")
-        println("Subgrid iteration: ${endOfIteration - startSubgridIteration}ms")
-        println("Unenclosed nodes: ${knownUnenclosed.size}")
-        */
+        debug {
+            println("Interesting iterations: $countInterestingIterations")
+            println("Interesting visits: $numberOfInterestingVisits (avg: ${numberOfInterestingVisits / countInterestingIterations})")
+            println("Break checks: $numberOfBreakChecks (avg: ${numberOfBreakChecks / countInterestingIterations})")
+            println("Setup time: ${startSubgridIteration - startEnclosedNodes}ms")
+            println("Subgrid iteration: ${endOfIteration - startSubgridIteration}ms")
+            println("Unenclosed nodes: ${knownUnenclosed.size}")
+        }
 
         val (enclosed, unenclosed) = allPositions.partition { SubGridPosition.fromAbsolutePosition(it) !in knownUnenclosed }
         return Enclosed(
@@ -352,10 +353,11 @@ class Day10 : AbstractDay(10), MiscRunner {
                 next = next.connectedNeighbors.filter { asReversed()[1] != it }[0]
             }
         }
-        val area = path.asSequence().zipWithNext().map { (a, b) ->
+        // Shoelace Area (Triangle)
+        val area = path.zipWithNext().sumOf { (a, b) ->
             (b.x - a.x) * (b.y + a.y)
-        }.sum() / 2
-        return area.absoluteValue - path.size / 2 + 1
+        }
+        return (area.absoluteValue - path.size) / 2 + 1 // Solve Pick's Theorem for /i/
     }
 
     private fun prettyPrint(
