@@ -10,3 +10,4 @@ build
 knowledge.json
 *.png
 *.stl
+.DS_Store

@@ -437,38 +437,51 @@ class Day10 : AbstractDay(10), MiscRunner {
             val pipeHeight = 0.3
             val pipeWidth = 0.3
             val loopHeight = 0.3
+            val boxPad = 0.1
             input.forEachIndexed { y, line ->
                 line.forEachIndexed charHandler@{ x, c ->
                     val position = AbsolutePosition(x, y, input)
                     if (position in enclosed.enclosed) {
                         return@charHandler
                     }
-                    translate(x, y, 0) {
-                        addBox(1, 1, baseHeight)
+                    translate(x - boxPad, y - boxPad, 0) {
+                        addBox(1 + 2 * boxPad, 1 + 2 * boxPad, baseHeight)
+                        val heightMod = if (position in pathNodes) {
+                            2.0
+                        } else {
+                            1.0
+                        }
                         position.potentialNeighborDirections.forEach {
                             val length = (0.5 + pipeWidth / 2.0)
                             val offset = (1 - pipeWidth) / 2.0
                             when (it) {
-                                UP -> addTranslatedBox(
+                                DOWN -> addTranslatedBox(
                                     offset,
                                     (1 - length),
                                     baseHeight,
                                     pipeWidth,
                                     length,
-                                    pipeHeight
+                                    pipeHeight * heightMod
                                 )
 
-                                DOWN -> addTranslatedBox(offset, 0, baseHeight, pipeWidth, length, pipeHeight)
+                                UP -> addTranslatedBox(offset, 0, baseHeight, pipeWidth, length, pipeHeight * heightMod)
                                 RIGHT -> addTranslatedBox(
                                     (1 - length),
                                     offset,
                                     baseHeight,
                                     length,
                                     pipeWidth,
-                                    pipeHeight
+                                    pipeHeight * heightMod
                                 )
 
-                                LEFT -> addTranslatedBox(0, offset, baseHeight, length, pipeWidth, pipeHeight)
+                                LEFT -> addTranslatedBox(
+                                    0,
+                                    offset,
+                                    baseHeight,
+                                    length,
+                                    pipeWidth,
+                                    pipeHeight * heightMod
+                                )
                             }
                         }
                     }
