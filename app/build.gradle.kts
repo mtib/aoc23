@@ -19,6 +19,7 @@ dependencies {
     implementation("io.insert-koin:koin-annotations:1.3.0")
     ksp("io.insert-koin:koin-ksp-compiler:1.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC")
 }
 
 tasks.create("aocJar", type = Jar::class) {
