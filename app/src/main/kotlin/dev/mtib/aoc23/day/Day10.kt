@@ -443,15 +443,33 @@ class Day10 : AbstractDay(10), MiscRunner {
                     if (position in enclosed.enclosed) {
                         return@charHandler
                     }
-                    addBox(x, y, 0, 1, 1, baseHeight)
-                    position.potentialNeighborDirections.forEach {
-                        val length = (0.5 + pipeWidth / 2.0)
-                        val offset = (1 - pipeWidth) / 2.0
-                        when (it) {
-                            UP -> addBox(x + offset, y + (1 - length), baseHeight, pipeWidth, length, pipeHeight)
-                            DOWN -> addBox(x + offset, y, baseHeight, pipeWidth, length, pipeHeight)
-                            RIGHT -> addBox(x + (1 - length), y + offset, baseHeight, length, pipeWidth, pipeHeight)
-                            LEFT -> addBox(x, y + offset, baseHeight, length, pipeWidth, pipeHeight)
+                    translate(x, y, 0) {
+                        addBox(1, 1, baseHeight)
+                        position.potentialNeighborDirections.forEach {
+                            val length = (0.5 + pipeWidth / 2.0)
+                            val offset = (1 - pipeWidth) / 2.0
+                            when (it) {
+                                UP -> addTranslatedBox(
+                                    offset,
+                                    (1 - length),
+                                    baseHeight,
+                                    pipeWidth,
+                                    length,
+                                    pipeHeight
+                                )
+
+                                DOWN -> addTranslatedBox(offset, 0, baseHeight, pipeWidth, length, pipeHeight)
+                                RIGHT -> addTranslatedBox(
+                                    (1 - length),
+                                    offset,
+                                    baseHeight,
+                                    length,
+                                    pipeWidth,
+                                    pipeHeight
+                                )
+
+                                LEFT -> addTranslatedBox(0, offset, baseHeight, length, pipeWidth, pipeHeight)
+                            }
                         }
                     }
                 }
