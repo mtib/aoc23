@@ -40,6 +40,11 @@ class Day12 : AbstractDay(12) {
             return stateList.joinToString("") + " " + damageGroups.joinToString(",")
         }
 
+        /**
+         * Optimisation ideas:
+         * - use sublist
+         * - lookup tails
+         */
         fun countGroups(
             states: List<State> = stateList,
             groups: List<Int> = damageGroups,
