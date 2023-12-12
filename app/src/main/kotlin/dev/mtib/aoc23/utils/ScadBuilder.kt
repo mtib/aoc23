@@ -54,18 +54,12 @@ class ScadBuilder private constructor() {
         tempfile.writeText(toScad())
         println("Saved to ${tempfile.toAbsolutePath()}")
         val openscadCommand = System.getenv("OPENSCAD_PATH") ?: "openscad"
-        val fullStlCommand = "$openscadCommand -o $name.stl --export-format binstl ${tempfile.toAbsolutePath()}"
-        println(fullStlCommand)
+        val fullCommand =
+            "$openscadCommand -o $name.stl -o $name.png ${tempfile.toAbsolutePath()}"
+        println(fullCommand)
         ProcessBuilder()
             .inheritIO()
-            .command(fullStlCommand.split(" "))
-            .start()
-            .waitFor()
-        val fullPngCommand = "$openscadCommand -o $name.png ${tempfile.toAbsolutePath()}"
-        println(fullPngCommand)
-        ProcessBuilder()
-            .inheritIO()
-            .command(fullPngCommand.split(" "))
+            .command(fullCommand.split(" "))
             .start()
             .waitFor()
         println("done")
