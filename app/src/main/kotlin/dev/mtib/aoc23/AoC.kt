@@ -167,6 +167,9 @@ private fun timePart(day: DaySolver, part: Int, input: Array<String>): RunResult
     try {
         buildList<Duration> {
             while (size < MIN_RUNS || reduce { acc, it -> acc + it } < MIN_TIME_SPENT) {
+                if (day is BeforeRunner) {
+                    day.before()
+                }
                 add(measureTime {
                     when (part) {
                         1 -> day.solvePart1(input)

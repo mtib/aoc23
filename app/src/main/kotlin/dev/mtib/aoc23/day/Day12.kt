@@ -1,14 +1,11 @@
 package dev.mtib.aoc23.day
 
 import dev.mtib.aoc23.utils.AbstractDay
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
+import dev.mtib.aoc23.utils.BeforeRunner
 import org.koin.core.annotation.Single
 
 @Single
-class Day12 : AbstractDay(12) {
+class Day12 : AbstractDay(12), BeforeRunner {
 
     companion object {
         fun String.asStates(): List<Row.State> {
@@ -21,6 +18,8 @@ class Day12 : AbstractDay(12) {
                 }
             }
         }
+
+        val cache = mutableMapOf<String, Long>()
     }
 
     class Row(val stateList: List<State>, val damageGroups: List<Int>) {
@@ -40,6 +39,7 @@ class Day12 : AbstractDay(12) {
             return stateList.joinToString("") + " " + damageGroups.joinToString(",")
         }
 
+
         /**
          * Optimisation ideas:
          * - use sublist
@@ -49,55 +49,72 @@ class Day12 : AbstractDay(12) {
             states: List<State> = stateList,
             groups: List<Int> = damageGroups,
         ): Long {
+            val cacheKey = states.joinToString("") + " " + groups.joinToString(",")
+            if (cacheKey in cache) {
+                return cache[cacheKey]!!
+            }
             if (groups.isEmpty()) {
                 if (states.all { it != State.Damaged }) {
-                    return 1L
+                    return 1
                 }
                 return 0
             }
             if (states.isEmpty()) {
                 return 0
             }
-            return when (states[0]) {
-                State.Operational -> countGroups(states.drop(1), groups)
+            val returnVal = when (states[0]) {
+                State.Operational -> countGroups(states.subList(1, states.size), groups)
                 State.Unknown -> {
                     val nextGroup = groups.first()
-                    val nextStates = states.take(nextGroup)
-                    val followingState = states.getOrNull(nextGroup)
-                    if (nextStates.all { it != State.Operational } && nextStates.size == nextGroup) {
-                        val applyNow = if (followingState != State.Damaged) {
-                            countGroups(
-                                states.drop(nextGroup + if (followingState != null) 1 else 0),
-                                groups.drop(1),
+                    if (states.size < nextGroup) {
+                        0
+                    } else {
+                        val nextStates = states.subList(0, nextGroup)
+                        val followingState = states.getOrNull(nextGroup)
+                        if (nextStates.all { it != State.Operational }) {
+                            val applyNow = if (followingState != State.Damaged) {
+                                countGroups(
+                                    states.subList(nextGroup + if (followingState != null) 1 else 0, states.size),
+                                    groups.subList(1, groups.size),
+                                )
+                            } else {
+                                0
+                            }
+                            val applyLater = countGroups(
+                                states.subList(1, states.size),
+                                groups,
                             )
+                            applyNow + applyLater
                         } else {
-                            0L
+                            countGroups(
+                                states.subList(1, states.size),
+                                groups,
+                            )
                         }
-                        val applyLater = countGroups(
-                            states.drop(1),
-                            groups,
-                        )
-                        return applyNow + applyLater
                     }
-                    return countGroups(
-                        states.drop(1),
-                        groups,
-                    )
                 }
 
                 State.Damaged -> {
                     val nextGroup = groups.first()
-                    val nextStates = states.take(nextGroup)
-                    val followingState = states.getOrNull(nextGroup)
-                    if (nextStates.all { it != State.Operational } && followingState != State.Damaged && nextStates.size == nextGroup) {
-                        return countGroups(
-                            states.drop(nextGroup + if (followingState != null) 1 else 0),
-                            groups.drop(1),
-                        )
+                    if (states.size < nextGroup) {
+                        0
+                    } else {
+                        val nextStates = states.subList(0, nextGroup)
+                        val followingState = states.getOrNull(nextGroup)
+                        if (nextStates.all { it != State.Operational } && followingState != State.Damaged && nextStates.size == nextGroup) {
+                            countGroups(
+                                states.subList(nextGroup + if (followingState != null) 1 else 0, states.size),
+                                groups.subList(1, groups.size),
+                            )
+                        } else {
+                            0
+                        }
                     }
-                    return 0L
                 }
             }
+
+            cache[cacheKey] = returnVal
+            return returnVal
         }
 
         fun iterateGroups(
@@ -196,7 +213,7 @@ class Day12 : AbstractDay(12) {
 
         debug {
             rows.forEach {
-                println(
+                log(
                     "$it -> ${it.iterateGroups().size} ${
                         it.iterateGroups().map { it.joinToString("") }
                     }"
@@ -346,7 +363,7 @@ class Day12 : AbstractDay(12) {
         }
 
 
-        return rows.sumOf { it.iterateGroups().size }
+        return rows.sumOf { it.countGroups() }
     }
 
     override fun solvePart2(input: Array<String>): Any? {
@@ -355,15 +372,15 @@ class Day12 : AbstractDay(12) {
             Row((1..5).joinToString("?") { states } + " " + (1..5).joinToString(",") { report })
         }
         var finished = 0
-        return runBlocking(Dispatchers.Default) {
-            rows.map { row ->
-                async {
-                    row.countGroups().also {
-                        finished++
-                        println("$finished / ${rows.size} (row=$row value=${it})")
-                    }
-                }
-            }.awaitAll().sum()
+        return rows.sumOf { row ->
+            row.countGroups().also {
+                finished++
+                log("$finished / ${rows.size} (row=$row value=${it}, cache_size=${cache.size})")
+            }
         }
+    }
+
+    override fun before() {
+        cache.clear() // To be fair for timing.
     }
 }

@@ -6,7 +6,7 @@ import dev.mtib.aoc23.day.Day10.Position.Companion.RIGHT
 import dev.mtib.aoc23.day.Day10.Position.Companion.UP
 import dev.mtib.aoc23.utils.AbstractDay
 import dev.mtib.aoc23.utils.MiscRunner
-import dev.mtib.aoc23.utils.dbg
+import dev.mtib.aoc23.utils.ScadBuilder
 import org.koin.core.annotation.Single
 import kotlin.math.absoluteValue
 import kotlin.time.measureTime
@@ -431,6 +431,33 @@ class Day10 : AbstractDay(10), MiscRunner {
             println("Shoelace area: ${shoelace(input)}")
         }
         println("Shoelace: ${shoelaceTime}")
+
+        ScadBuilder.build {
+            val baseHeight = 0.3
+            val pipeHeight = 0.3
+            val pipeWidth = 0.3
+            val loopHeight = 0.3
+            input.forEachIndexed { y, line ->
+                line.forEachIndexed charHandler@{ x, c ->
+                    val position = AbsolutePosition(x, y, input)
+                    if (position in enclosed.enclosed) {
+                        return@charHandler
+                    }
+                    addBox(x, y, 0, 1, 1, baseHeight)
+                    position.potentialNeighborDirections.forEach {
+                        val length = (0.5 + pipeWidth / 2.0)
+                        val offset = (1 - pipeWidth) / 2.0
+                        when (it) {
+                            UP -> addBox(x + offset, y + (1 - length), baseHeight, pipeWidth, length, pipeHeight)
+                            DOWN -> addBox(x + offset, y, baseHeight, pipeWidth, length, pipeHeight)
+                            RIGHT -> addBox(x + (1 - length), y + offset, baseHeight, length, pipeWidth, pipeHeight)
+                            LEFT -> addBox(x, y + offset, baseHeight, length, pipeWidth, pipeHeight)
+                        }
+                    }
+                }
+            }
+        }.saveToDisk("day10")
+
     }
 }
 

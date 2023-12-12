@@ -8,3 +8,5 @@ build
 #
 .env
 knowledge.json
+*.png
+*.stl
