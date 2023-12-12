@@ -95,7 +95,7 @@ class ScadBuilder private constructor() {
         println("Saved to ${tempfile.toAbsolutePath()}")
         val openscadCommand = System.getenv("OPENSCAD_PATH") ?: "openscad"
         val fullCommand =
-            "$openscadCommand -o $name.stl -o $name.png ${tempfile.toAbsolutePath()}"
+            "$openscadCommand --enable=fast-csg -o $name.stl -o $name.png ${tempfile.toAbsolutePath()}"
         println(fullCommand)
         ProcessBuilder()
             .inheritIO()
