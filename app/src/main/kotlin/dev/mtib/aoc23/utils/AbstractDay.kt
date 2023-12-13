@@ -4,6 +4,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.nio.file.NoSuchFileException
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
+import kotlin.time.Duration.Companion.seconds
 
 typealias dbg = AbstractDay.() -> Unit
 
@@ -34,7 +39,18 @@ abstract class AbstractDay(val dayNumber: Int, val yearNumber: Int = 2023) : Day
         return try {
             readLines(inputPath)
         } catch (e: NoSuchFileException) {
-            println("No input file found for day $dayNumber, fetching from adventofcode.com")
+            val releaseTime = ZonedDateTime.of(yearNumber, 12, dayNumber, 0, 0, 0, 0, ZoneId.of("UTC-5"))
+            val now = Instant.now()
+            println("No input file found for day $dayNumber")
+            if (now.isBefore(releaseTime.toInstant())) {
+                println(
+                    "Input file for day $dayNumber is not yet available (release in ${
+                        now.until(releaseTime, ChronoUnit.SECONDS).seconds
+                    })"
+                )
+                return null
+            }
+            println("Fetching from adventofcode.com")
             val token = System.getenv("AOC_SESSION")
             if (token == null || token == "") {
                 println("No AOC_SESSION environment variable found, please set it to your session token")
