@@ -15,6 +15,12 @@ class ScadBuilder private constructor() {
 
     abstract class Shape {
         abstract fun toScad(): String
+
+        fun addToStringBuilder(stringBuilder: StringBuilder, indent: String = "  ") {
+            toScad().lines().filter { it.isNotBlank() }.forEach {
+                stringBuilder.appendLine("$indent$it")
+            }
+        }
     }
 
     open class Box(
@@ -39,6 +45,9 @@ class ScadBuilder private constructor() {
     }
 
     private val shapes = mutableListOf<Shape>()
+    private val modules = mutableListOf<Module>()
+
+    fun addShape(shape: Shape) = shapes.add(shape)
 
     fun addBox(l: Number, w: Number, h: Number) {
         shapes.add(Box(l, w, h))
@@ -55,9 +64,15 @@ class ScadBuilder private constructor() {
         val shapes: List<Shape>
     ) : Shape() {
         override fun toScad(): String = buildString {
+            if (x == 0 && y == 0 && z == 0) {
+                shapes.forEach {
+                    it.addToStringBuilder(this, "")
+                }
+                return@buildString
+            }
             appendLine("translate([$x, $y, $z]) {")
             shapes.forEach {
-                appendLine(it.toScad())
+                it.addToStringBuilder(this, "  ")
             }
             appendLine("}")
         }
@@ -67,6 +82,56 @@ class ScadBuilder private constructor() {
         val scadBuilder = ScadBuilder()
         scadBuilder.block()
         shapes.add(Translate(x, y, z, scadBuilder.shapes))
+    }
+
+    class Rotate(
+        val degrees: Number,
+        val shapes: List<Shape>
+    ) : Shape() {
+        override fun toScad(): String = buildString {
+            if (degrees == 0) {
+                shapes.forEach {
+                    it.addToStringBuilder(this, "")
+                }
+                return@buildString
+            }
+            appendLine("rotate([0, 0, $degrees]) {")
+            shapes.forEach {
+                it.addToStringBuilder(this, "  ")
+            }
+            appendLine("}")
+        }
+    }
+
+    fun rotate(degrees: Number, block: ScadBuilder.() -> Unit) {
+        val scadBuilder = ScadBuilder()
+        scadBuilder.block()
+        shapes.add(Rotate(degrees, scadBuilder.shapes))
+    }
+
+    class Module(
+        val shapes: List<Shape>,
+        val name: String
+    ) : Shape() {
+        fun toModel(): String = buildString {
+            appendLine("module $name() {")
+            shapes.forEach {
+                it.addToStringBuilder(this, "  ")
+            }
+            appendLine("}")
+        }
+
+        override fun toScad(): String = buildString {
+            appendLine("$name();")
+        }
+    }
+
+    fun module(block: ScadBuilder.() -> Unit): Module {
+        val scadBuilder = ScadBuilder()
+        scadBuilder.block()
+        val module = Module(scadBuilder.shapes, "model${modules.size}")
+        modules.add(module)
+        return module
     }
 
     companion object {
@@ -79,19 +144,20 @@ class ScadBuilder private constructor() {
 
     fun toScad(): String {
         return buildString {
-            shapes.forEach { shape ->
-                appendLine(shape.toScad())
+            modules.forEach {
+                appendLine(it.toModel())
             }
+            appendLine("union() {")
+            shapes.forEach { shape ->
+                shape.addToStringBuilder(this, "  ")
+            }
+            appendLine("}")
         }
     }
 
     fun saveToDisk(name: String = "output") {
         val tempfile = createTempFile(suffix = ".scad", prefix = "aoc_scad_full_")
-        tempfile.writeText(buildString {
-            appendLine("union() {")
-            appendLine(toScad())
-            appendLine("}")
-        })
+        tempfile.writeText(toScad())
         println("Saved to ${tempfile.toAbsolutePath()}")
         val openscadCommand = System.getenv("OPENSCAD_PATH") ?: "openscad"
         val fullCommand =

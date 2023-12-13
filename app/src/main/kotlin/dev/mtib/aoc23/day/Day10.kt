@@ -433,55 +433,73 @@ class Day10 : AbstractDay(10), MiscRunner {
         println("Shoelace: ${shoelaceTime}")
 
         ScadBuilder.build {
-            val baseHeight = 0.3
-            val pipeHeight = 0.3
+            val baseHeight = 2
+            val pipeHeight = 0.5
             val pipeWidth = 0.3
-            val loopHeight = 0.3
-            val boxPad = 0.1
+            val length = (0.5 + pipeWidth / 2.0)
+            val pipePartModule = module {
+                // points right
+                addTranslatedBox(
+                    0.5 - length,
+                    -1.0 * pipeWidth / 2.0,
+                    0,
+                    length + 0.1,
+                    pipeWidth,
+                    pipeHeight
+                )
+            }
+            val downRightModule = module {
+                addShape(pipePartModule)
+                rotate(90) {
+                    addShape(pipePartModule)
+                }
+            }
+            val horizontalModule = module {
+                addTranslatedBox(
+                    -0.5,
+                    -1.0 * pipeWidth / 2.0,
+                    0,
+                    1,
+                    pipeWidth,
+                    pipeHeight
+                )
+            }
+            val startModule = module {
+                addShape(horizontalModule)
+                rotate(90) {
+                    addShape(horizontalModule)
+                }
+            }
+            addBox(input[0].length, input.size, baseHeight + 0.1)
             input.forEachIndexed { y, line ->
                 line.forEachIndexed charHandler@{ x, c ->
                     val position = AbsolutePosition(x, y, input)
                     if (position in enclosed.enclosed) {
                         return@charHandler
                     }
-                    translate(x - boxPad, y - boxPad, 0) {
-                        addBox(1 + 2 * boxPad, 1 + 2 * boxPad, baseHeight)
-                        val heightMod = if (position in pathNodes) {
-                            2.0
-                        } else {
-                            1.0
+                    val rotation = when (c) {
+                        'S' -> 0 to startModule
+                        'F' -> 0 to downRightModule
+                        // Note: mirrored because +y in model is "up" but +y in input is "down"
+                        '7' -> 90 to downRightModule
+                        'J' -> 180 to downRightModule
+                        'L' -> 270 to downRightModule
+                        '|' -> 90 to horizontalModule
+                        '-' -> 0 to horizontalModule
+                        '.' -> null
+                        else -> throw IllegalArgumentException("Unknown character $c")
+                    }
+                    if (rotation != null) {
+                        translate(x + 0.5, y + 0.5, baseHeight) {
+                            rotate(rotation.first) {
+                                addShape(rotation.second)
+                            }
                         }
-                        position.potentialNeighborDirections.forEach {
-                            val length = (0.5 + pipeWidth / 2.0)
-                            val offset = (1 - pipeWidth) / 2.0
-                            when (it) {
-                                DOWN -> addTranslatedBox(
-                                    offset,
-                                    (1 - length),
-                                    baseHeight,
-                                    pipeWidth,
-                                    length,
-                                    pipeHeight * heightMod
-                                )
-
-                                UP -> addTranslatedBox(offset, 0, baseHeight, pipeWidth, length, pipeHeight * heightMod)
-                                RIGHT -> addTranslatedBox(
-                                    (1 - length),
-                                    offset,
-                                    baseHeight,
-                                    length,
-                                    pipeWidth,
-                                    pipeHeight * heightMod
-                                )
-
-                                LEFT -> addTranslatedBox(
-                                    0,
-                                    offset,
-                                    baseHeight,
-                                    length,
-                                    pipeWidth,
-                                    pipeHeight * heightMod
-                                )
+                        if (position in pathNodes) {
+                            translate(x + 0.5, y + 0.5, baseHeight - 0.1 + pipeHeight) {
+                                rotate(rotation.first) {
+                                    addShape(rotation.second)
+                                }
                             }
                         }
                     }
