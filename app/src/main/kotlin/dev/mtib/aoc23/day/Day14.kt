@@ -6,25 +6,15 @@ import org.koin.core.annotation.Single
 @Single
 class Day14 : AbstractDay(14) {
 
-    private fun computeLoad(input: Array<String>): Int {
-        return input.withIndex().sumOf { (row, line) ->
-            line.withIndex().sumOf { (column, c) ->
-                val above = input.getOrNull(row - 1)?.getOrNull(column)
-                if (above == '.' || above == 'O' || c == '#') {
-                    0
-                } else {
-                    val rollingStones =
-                        input.slice(row..<input.size).map { it[column] }.takeWhile { it != '#' }.count() { it == 'O' }
-                    val startVal = input.size - row
-                    val endVal = startVal - rollingStones + 1
-                    rollingStones * (startVal + endVal) / 2
-                }
-            }
-        }
+    private fun computeLoad(input: Array<Array<Char>>): Int = input.withIndex().sumOf { (line, row) ->
+        row.count { it == 'O' } * (input.size - line)
     }
 
+    private fun Array<String>.toBoard(): Array<Array<Char>> =
+        this.map { it.toCharArray().toTypedArray() }.toTypedArray()
+
     override fun solvePart1(input: Array<String>): Int {
-        return computeLoad(input)
+        return computeLoad(tilt(input.toBoard(), Direction.UP))
     }
 
     private val cycles = 1000000000L
@@ -34,14 +24,11 @@ class Day14 : AbstractDay(14) {
     }
 
     private fun tilt(input: Array<Array<Char>>, direction: Direction): Array<Array<Char>> {
-        val nextMap = Array(input.size) { Array(input[0].size) { '?' } }
         input.withIndex().forEach { (row, line) ->
             line.withIndex().forEach charHandler@{ (column, c) ->
                 when (c) {
                     '.' -> {
-                        if (nextMap[row][column] == '?') {
-                            nextMap[row][column] = '.'
-                        }
+                        return@charHandler
                     }
 
                     'O' -> {
@@ -63,15 +50,9 @@ class Day14 : AbstractDay(14) {
                                 if (nextRow < 0 || nextRow >= input.size || nextColumn < 0 || nextColumn >= input[0].size) {
                                     break
                                 }
-                                val oldNextChar = input[nextRow][nextColumn]
-                                if (oldNextChar == '#') {
+                                val nextChar = input[nextRow][nextColumn]
+                                if (nextChar == '#') {
                                     break
-                                }
-                                val updatedNextChar = nextMap[nextRow][nextColumn]
-                                val nextChar = if (updatedNextChar == '?') {
-                                    oldNextChar
-                                } else {
-                                    updatedNextChar
                                 }
                                 yield(Position(nextRow, nextColumn, nextChar))
                                 dist++
@@ -79,34 +60,27 @@ class Day14 : AbstractDay(14) {
                         }
                         val moveTo = next.findLast { it.char == '.' }
                         if (moveTo != null) {
-                            nextMap[moveTo.row][moveTo.column] = 'O'
-                            nextMap[row][column] = '.'
+                            input[moveTo.row][moveTo.column] = 'O'
+                            input[row][column] = '.'
                         } else {
-                            nextMap[row][column] = 'O'
+                            input[row][column] = 'O'
                         }
                     }
 
                     '#' -> {
-                        nextMap[row][column] = '#'
+                        return@charHandler
                     }
                 }
             }
         }
-        return nextMap
+        return input
     }
 
-    fun Array<Array<Char>>.hash(): String {
-        return this.joinToString("") { it.joinToString("") }
+    fun Array<Array<Char>>.hash(): Int {
+        return this.sumOf { it.contentHashCode() }
     }
 
     override fun solvePart2(input: Array<String>): Any? {
-
-        fun printMap(map: Array<Array<Char>>) {
-            println("+" + "-".repeat(map[0].size) + "+")
-            map.forEach { println("|${it.joinToString("")}|") }
-            println("+" + "-".repeat(map[0].size) + "+")
-        }
-
         debug {
             val example = listOf(
                 "#.O",
@@ -128,35 +102,28 @@ class Day14 : AbstractDay(14) {
                     tilt(example, it).sumOf { it.count { it == 'O' } } == example.sumOf { it.count { it == 'O' } }
                 ) { "Tilting should not change the number of rolling stones. (broke for $it)" }
             }
-
-            printMap(example)
-            printMap(tilt(example, Direction.UP))
-            printMap(tilt(tilt(example, Direction.UP), Direction.DOWN))
         }
 
-        var map = input.map { it.toCharArray().toTypedArray() }.toTypedArray()
-        debug {
-            printMap(map)
-        }
-        val seenMaps = mutableListOf<String>(map.hash())
+        val map = input.toBoard()
+        val seenMaps = mutableListOf(map.hash())
         for (it in 1..cycles) {
-            map = tilt(map, Direction.UP)
-            map = tilt(map, Direction.LEFT)
-            map = tilt(map, Direction.DOWN)
-            map = tilt(map, Direction.RIGHT)
+            tilt(map, Direction.UP)
+            tilt(map, Direction.LEFT)
+            tilt(map, Direction.DOWN)
+            tilt(map, Direction.RIGHT)
             if (map.hash() in seenMaps) {
                 val cycleLength = it - seenMaps.lastIndexOf(map.hash())
                 debug {
-                    println("Found cycle at index $it (size ${cycleLength})")
+                    log("Found cycle at index $it (size ${cycleLength})")
                 }
                 val remainingCycles = (cycles - it) % cycleLength
                 for (i in 1..remainingCycles) {
-                    map = tilt(map, Direction.UP)
-                    map = tilt(map, Direction.LEFT)
-                    map = tilt(map, Direction.DOWN)
-                    map = tilt(map, Direction.RIGHT)
+                    tilt(map, Direction.UP)
+                    tilt(map, Direction.LEFT)
+                    tilt(map, Direction.DOWN)
+                    tilt(map, Direction.RIGHT)
                 }
-                return computeLoad(map.map { it.joinToString("") }.toTypedArray())
+                return computeLoad(map)
             }
             seenMaps.add(map.hash())
         }
