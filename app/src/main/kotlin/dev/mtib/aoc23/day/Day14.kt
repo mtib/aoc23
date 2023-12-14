@@ -95,7 +95,17 @@ class Day14 : AbstractDay(14) {
         return nextMap
     }
 
+    fun Array<Array<Char>>.hash(): String {
+        return this.joinToString("") { it.joinToString("") }
+    }
+
     override fun solvePart2(input: Array<String>): Any? {
+
+        fun printMap(map: Array<Array<Char>>) {
+            println("+" + "-".repeat(map[0].size) + "+")
+            map.forEach { println("|${it.joinToString("")}|") }
+            println("+" + "-".repeat(map[0].size) + "+")
+        }
 
         debug {
             val example = listOf(
@@ -104,12 +114,6 @@ class Day14 : AbstractDay(14) {
                 "...",
                 "OOO"
             ).map { it.toCharArray().toTypedArray() }.toTypedArray()
-
-            fun printMap(map: Array<Array<Char>>) {
-                println("+" + "-".repeat(map[0].size) + "+")
-                map.forEach { println("|${it.joinToString("")}|") }
-                println("+" + "-".repeat(map[0].size) + "+")
-            }
 
             Direction.entries.forEach {
                 require(
@@ -131,49 +135,30 @@ class Day14 : AbstractDay(14) {
         }
 
         var map = input.map { it.toCharArray().toTypedArray() }.toTypedArray()
-        val seen = mutableListOf(computeLoad(map.map { it.joinToString("") }.toTypedArray()))
-        (1..cycles).forEach {
+        debug {
+            printMap(map)
+        }
+        val seenMaps = mutableListOf<String>(map.hash())
+        for (it in 1..cycles) {
             map = tilt(map, Direction.UP)
             map = tilt(map, Direction.LEFT)
             map = tilt(map, Direction.DOWN)
             map = tilt(map, Direction.RIGHT)
-            seen.add(computeLoad(map.map { it.joinToString("") }.toTypedArray()))
-
-            if (seen.size > 100) {
-                (10..minOf(100 + seen.size / 100, seen.size)).forEach cycleGuess@{ cycleLength ->
-                    (1..<cycleLength).forEach { checkIndex ->
-                        val check = seen[seen.size - checkIndex]
-                        val checkAgainst = seen.getOrNull(seen.size - checkIndex - cycleLength)
-                        val checkAgainst2 = seen.getOrNull(seen.size - checkIndex - cycleLength * 2)
-                        val checkAgainst3 = seen.getOrNull(seen.size - checkIndex - cycleLength * 3)
-                        if (check != checkAgainst || check != checkAgainst2 || check != checkAgainst3) {
-                            return@cycleGuess
-                        }
-                    }
-                    debug {
-                        println("Found cycle of length $cycleLength at index ${seen.size - cycleLength}")
-                    }
-                    val cycleStartIndex = seen.size - cycleLength
-                    val remainingCycles = cycles - cycleStartIndex
-                    val cycleIndex = remainingCycles % cycleLength
-                    for (i in 0 until cycleLength) {
-                        debug {
-                            println("Cycle start at $cycleStartIndex [+$i] mod $cycleLength: ${seen[cycleStartIndex + i]}, ${seen[cycleStartIndex + i - cycleLength]}")
-                        }
-                    }
-                    debug {
-                        println("$cycles - $cycleStartIndex = $remainingCycles")
-                        println("$remainingCycles % $cycleLength = $cycleIndex")
-                        println("cycle at [+${cycleIndex}]: ${seen[(cycleStartIndex + cycleIndex).toInt()]}")
-                        val cycle = seen.slice(cycleStartIndex until seen.size)
-                        require(cycle.size == cycleLength) { "Cycle size should be $cycleLength, but was ${cycle.size}" }
-                        println(cycle)
-                        println("min: ${cycle.minOrNull()}, max: ${cycle.maxOrNull()}")
-                        println("less than 103607 and not 103475: ${cycle.filter { it < 103607 && it != 103475 }}")
-                    }
-                    return seen[(cycleStartIndex + cycleIndex).toInt()]
+            if (map.hash() in seenMaps) {
+                val cycleLength = it - seenMaps.lastIndexOf(map.hash())
+                debug {
+                    println("Found cycle at index $it (size ${cycleLength})")
                 }
+                val remainingCycles = (cycles - it) % cycleLength
+                for (i in 1..remainingCycles) {
+                    map = tilt(map, Direction.UP)
+                    map = tilt(map, Direction.LEFT)
+                    map = tilt(map, Direction.DOWN)
+                    map = tilt(map, Direction.RIGHT)
+                }
+                return computeLoad(map.map { it.joinToString("") }.toTypedArray())
             }
+            seenMaps.add(map.hash())
         }
         return null
     }
