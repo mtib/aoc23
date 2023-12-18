@@ -130,8 +130,8 @@ class Day18 : AbstractDay(18) {
 
     override fun solvePart1(input: Array<String>): Any? {
         val digInstructions = input.map { DigInstruction.fromLine(it) }
-        val dug = simulateDig(digInstructions)
         debug {
+            val dug = simulateDig(digInstructions)
             val dugSet = dug.toSet()
             require(dugSet.size == dug.size - 1) { "dugSet.size: ${dugSet.size}, dug.size: ${dug.size}" }
             val a = dugSet.size + outerFloodFill(dugSet).size
@@ -141,6 +141,7 @@ class Day18 : AbstractDay(18) {
             val c = shoelace(simulateFastDig(digInstructions))
             require(c == b) { "c: $c, b: $b" }
         }
+        val dug = simulateFastDig(digInstructions)
         return shoelace(dug.subList(0, dug.size - 1))
     }
 
