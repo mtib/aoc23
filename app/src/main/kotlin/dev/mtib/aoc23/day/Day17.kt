@@ -1,11 +1,13 @@
 package dev.mtib.aoc23.day
 
 import dev.mtib.aoc23.utils.AbstractDay
+import dev.mtib.aoc23.utils.MiscRunner
+import dev.mtib.aoc23.utils.ScadBuilder
 import org.koin.core.annotation.Single
 import java.util.*
 
 @Single
-class Day17 : AbstractDay(17) {
+class Day17 : AbstractDay(17), MiscRunner {
 
     data class Position(val x: Int, val y: Int) {
         operator fun plus(other: Position): Position {
@@ -167,6 +169,25 @@ class Day17 : AbstractDay(17) {
             printMap(parsedMap, path)
         }
         return path.drop(1).sumOf { input[it.y][it.x].digitToInt() }
+    }
+
+    override fun misc(input: Array<String>) {
+        val parsedMap = parseMap(input)
+        val scale = 10
+        val overlap = 0.1
+        val part1Solution = bfs(parsedMap)
+        val part2Solution = bfs(parsedMap, minStraight = 4, maxStraight = 10)
+        ScadBuilder.build {
+            parsedMap.forEachIndexed { y, row ->
+                row.forEachIndexed { x, it ->
+                    val h = 5 + it * 5
+                    addTranslatedBox(x * scale, y * scale, 0, scale + overlap, scale + overlap, h + overlap)
+                    if (Position(x, y) in part1Solution || Position(x, y) in part2Solution) {
+                        addTranslatedBox((x + 0.3) * scale, (y + 0.3) * scale, h, 0.4 * scale, 0.4 * scale, 0.5 * scale)
+                    }
+                }
+            }
+        }.saveToDisk("day17")
     }
 }
 
