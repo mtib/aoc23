@@ -166,14 +166,13 @@ class Day19 : AbstractDay(19) {
                         val newPartRange = PartRange(newMapping)
                         if (newPartRange.count() == 0L) continue
                         toVisit.add(State(parentRule, newPartRange))
-                    } else {
-                        // Don't be in those conditions
-                        val newRange = when (condition.operator) {
-                            Operator.GT -> range.first..range.last.coerceAtMost(condition.value.toLong())
-                            Operator.LT -> range.first.coerceAtLeast(condition.value.toLong())..range.last
-                        }
-                        mapping[condition.category] = newRange
                     }
+                    // Don't be in those conditions
+                    val newRange = when (condition.operator) {
+                        Operator.GT -> range.first..range.last.coerceAtMost(condition.value.toLong())
+                        Operator.LT -> range.first.coerceAtLeast(condition.value.toLong())..range.last
+                    }
+                    mapping[condition.category] = newRange
                 }
                 if (parentRule.fallback == currentState.rule.name) {
                     val newPartRange = PartRange(mapping)
@@ -189,13 +188,18 @@ class Day19 : AbstractDay(19) {
 
         val ranges = mutableListOf(firstOrderRanges)
 
+        fun intersect(first: LongRange, second: LongRange): LongRange {
+            return first.first.coerceAtLeast(second.first)..first.last.coerceAtMost(second.last)
+        }
+
+        debug {
+            println("${firstOrderRanges.size} first-order ranges")
+        }
+
         while (ranges.last().isNotEmpty()) {
-            fun intersect(first: LongRange, second: LongRange): LongRange {
-                return first.first.coerceAtLeast(second.first)..first.last.coerceAtMost(second.last)
-            }
 
             val nthOrder = ranges.last()
-            val nextOrder = nthOrder.flatMapIndexed { firstRangeIndex, firstRange ->
+            val nextOrder = nthOrder.distinct().flatMapIndexed { firstRangeIndex, firstRange ->
                 nthOrder.drop(firstRangeIndex + 1).asSequence().map { secondRange ->
                     PartRange(
                         mapOf(
@@ -205,10 +209,10 @@ class Day19 : AbstractDay(19) {
                             Category.S to intersect(firstRange.s, secondRange.s),
                         )
                     )
-                }.filter { it.count() > 0 }.distinct()
+                }.filter { it.count() > 0 }
             }.distinct()
             debug {
-                println("${nextOrder.size} ${ranges.size}-order ranges")
+                println("${nextOrder.size} ${ranges.size + 1}-order ranges")
             }
             ranges.add(nextOrder)
         }
