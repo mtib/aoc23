@@ -36,3 +36,24 @@ fun <T> Sequence<T>.split(predicate: (item: T) -> Boolean): Sequence<Sequence<T>
 
     }
 }
+
+fun lcm(a: Long, b: Long): Long {
+    var s = 0L
+    var r = b
+    var old_s = 1L
+    var old_r = a
+    var temp: Long
+    var bezout_t = 0L
+
+    while (r != 0L) {
+        val quotient = old_r / r;
+        temp = r;
+        r = old_r - quotient * r;
+        old_r = temp;
+        temp = s;
+        s = old_s - quotient * s;
+        old_s = temp;
+    }
+
+    return (a * b) / old_r
+}
