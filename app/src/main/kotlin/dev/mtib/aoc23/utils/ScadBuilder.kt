@@ -109,6 +109,25 @@ class ScadBuilder private constructor() {
         shapes.add(Rotate(degrees, scadBuilder.shapes))
     }
 
+    class HexColor(
+        val hexString: String,
+        val shapes: List<Shape>
+    ) : Shape() {
+        override fun toScad(): String = buildString {
+            appendLine("color(\"#$hexString\") {")
+            shapes.forEach {
+                it.addToStringBuilder(this, "  ")
+            }
+            appendLine("}")
+        }
+    }
+
+    fun hexColor(hexString: String, block: ScadBuilder.() -> Unit) {
+        val scadBuilder = ScadBuilder()
+        scadBuilder.block()
+        shapes.add(HexColor(hexString, scadBuilder.shapes))
+    }
+
     class Module(
         val shapes: List<Shape>,
         val name: String
