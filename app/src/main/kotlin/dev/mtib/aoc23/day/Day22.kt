@@ -63,8 +63,8 @@ class Day22 : AbstractDay(22) {
         }
 
         fun stabilisers(other: Collection<Brick>): Set<Brick> {
-            val inColumn = other.filter { it.overlapsInColumn(this) && it.end.z == start.z - 1 }
-            return inColumn.toSet()
+            val stabilizing = other.filter { it.overlapsInColumn(this) && it.end.z == start.z - 1 }
+            return stabilizing.toSet()
         }
     }
 
@@ -152,7 +152,82 @@ class Day22 : AbstractDay(22) {
         return bricks.size - soloStabilisers.size
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     override fun solvePart2(input: Array<String>): Any? {
-        return super.solvePart2(input)
+        val bricks = input.map { Brick.fromString(it) }
+
+        val resolved = settleBricks(bricks)
+
+        val stabilizerMap = resolved.associateWith { brick -> brick.stabilisers(resolved) }
+
+        val chainReaction = resolved.associateWith { brick ->
+            val broken = mutableSetOf<Brick>()
+            val breaking = mutableSetOf<Brick>(brick)
+            while (breaking.isNotEmpty()) {
+                broken.addAll(breaking)
+                breaking.clear()
+                stabilizerMap.entries.filter { it.key !in broken }.filter {
+                    it.value.isNotEmpty() && it.value.all { it in broken }
+                }.forEach { breaking.add(it.key) }
+            }
+            broken - brick
+        }
+        debug {
+            for (block in resolved) {
+                val scad = ScadBuilder.build {
+                    hexColor("ddd") {
+                        addTranslatedBox(
+                            resolved.minOf { it.start.x },
+                            resolved.minOf { it.start.y },
+                            0,
+                            resolved.maxOf { it.end.x } + 1,
+                            resolved.maxOf { it.end.y } + 1,
+                            1,
+                        )
+                    }
+                    resolved.forEach { brick ->
+                        val chainLength = run {
+                            var length = 0
+                            val reachable = mutableSetOf<Brick>()
+                            val reachableNext = mutableSetOf<Brick>(block)
+                            while (reachableNext.isNotEmpty() && brick !in reachable) {
+                                reachable.addAll(reachableNext)
+                                reachableNext.clear()
+                                length += 1
+                                stabilizerMap.entries.filter { it.key !in reachable }.filter {
+                                    it.value.isNotEmpty() && it.value.all { it in reachable }
+                                }.forEach { reachableNext.add(it.key) }
+                            }
+                            if (brick in reachable) length else -1
+                        }
+                        hexColor(
+                            when {
+                                brick == block -> "f00"
+                                chainLength >= 0 -> {
+                                    (200 - chainLength).toHexString().substring(6, 8).padEnd(6, '0')
+                                }
+
+                                chainLength < 0 -> {
+                                    (200 + Random.nextInt(56)).toHexString().substring(6, 8).repeat(3)
+                                }
+
+                                else -> throw Exception("Should not happen")
+                            }
+                        ) {
+                            addTranslatedBox(
+                                brick.start.x.toDouble(),
+                                brick.start.y.toDouble(),
+                                brick.start.z.toDouble(),
+                                brick.end.x.toDouble() - brick.start.x.toDouble() + 1,
+                                brick.end.y.toDouble() - brick.start.y.toDouble() + 1,
+                                brick.end.z.toDouble() - brick.start.z.toDouble() + 1
+                            )
+                        }
+                    }
+                }.toScad()
+                Path("./day22_${resolved.indexOf(block).toString().padStart(4, '0')}_supports.scad").writeText(scad)
+            }
+        }
+        return chainReaction.values.sumOf { it.size }
     }
 }
