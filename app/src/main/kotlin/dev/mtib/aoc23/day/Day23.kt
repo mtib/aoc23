@@ -228,20 +228,47 @@ class Day23 : AbstractDay(23) {
         }.let { it.points.size } - 1
     }
 
+
+    fun isExitStillReachable(visitedAreas: List<Area>, graph: AreaGraph): Boolean {
+        val toVisit = mutableListOf(visitedAreas)
+        while (toVisit.isNotEmpty()) {
+            val extension = toVisit.removeFirst()!!
+            val currentArea = extension.last()
+            if (currentArea == graph.exit) {
+                return true
+            }
+            for (choice in currentArea.exitSlopes.keys) {
+                val nextArea = currentArea.exitSlopes[choice]!!
+                if (nextArea !in extension) {
+                    toVisit.add(extension + nextArea)
+                }
+            }
+        }
+        return false
+    }
+
     fun tryGraphCombinationsForLongestPathLengthPt2(input: Array<String>): Int {
         val graph = buildAreaGraph(input, bidirectional = true)
 
-        data class State(val points: List<Point>, val visitedAreas: List<Area>, val currentArea: Area)
+        data class State(val lastPoint: Point, val visitedAreas: List<Area>, val currentArea: Area)
 
         val startPoint = graph.entry.points.first { it.y == 0 }
         val endPoint = graph.exit.points.first { it.y == input.size - 1 }
 
         val dontHaveBoth = run {
-            val beforeEnd = graph.exit
+            val beforeEnd = graph.exit.exitSlopes.values.first()
             graph.areas.filter { it != graph.exit && beforeEnd in it.exitSlopes.values }
         }
 
-        val toVisit = mutableListOf(State(listOf(startPoint), emptyList(), graph.entry))
+        var lastPrinted: Int? = null
+        fun printCurrentBest(length: Int) {
+            if (lastPrinted != length) {
+                println("Current best: $length steps")
+            }
+            lastPrinted = length
+        }
+
+        val toVisit = mutableListOf(State(startPoint, emptyList(), graph.entry))
         return sequence<State> {
             while (toVisit.isNotEmpty()) {
                 val current = toVisit.removeFirst()!!
@@ -249,57 +276,64 @@ class Day23 : AbstractDay(23) {
                     continue
                 }
                 val choices = current.currentArea.exitSlopes.filter { it.value !in current.visitedAreas }.keys
-                val lastPoint = current.points.last()
                 if (current.currentArea == graph.exit) {
-                    val pathToExit = current.currentArea.getInnerPath(lastPoint, endPoint)
                     yield(
                         State(
-                            (current.points + pathToExit.subList(1, pathToExit.size)).distinct(),
+                            endPoint,
                             current.visitedAreas + current.currentArea,
                             graph.exit,
                         )
                     )
-                }
-                for (choice in choices) {
-                    val nextArea = current.currentArea.exitSlopes[choice]!!
-                    var downhill = choice.backwards(input) in current.currentArea.points
-                    val pathToNextArea = runCatching {
-                        if (downhill) {
-                            current.currentArea.getInnerPath(lastPoint, choice.backwards(input))
-                        } else {
-                            current.currentArea.getInnerPath(lastPoint, choice.forward(input))
-                        }
-                    }.getOrElse {
-                        printInputWithPoints(input, choices)
-                        printInputWithPoints(input, current.currentArea.points)
-                        printInputWithPoints(input, listOf(choice.backwards(input), choice, choice.forward(input)))
-                        throw Exception("No path found from $lastPoint to $choice")
-                    }
-                    toVisit.add(
-                        State(
-                            current.points + pathToNextArea.subList(
-                                1,
-                                pathToNextArea.size
-                            ) + choice + (if (downhill) choice.forward(input) else choice.backwards(input)),
-                            current.visitedAreas + current.currentArea,
-                            nextArea,
+                } else {
+                    for (choice in choices) {
+                        val nextArea = current.currentArea.exitSlopes[choice]!!
+                        val downhill = choice.backwards(input) in current.currentArea.points
+                        toVisit.add(
+                            State(
+                                if (downhill) choice.forward(input) else choice.backwards(input),
+                                current.visitedAreas + current.currentArea,
+                                nextArea,
+                            )
                         )
-                    )
+                    }
                 }
             }
-        }.maxBy { it.points.size }.also { maxState ->
-            debug {
-                printInputWithPoints(input, maxState.points)
+        }.map {
+            val path = mutableListOf(startPoint)
+            var currentArea = it.visitedAreas[0]
+            for (nextArea in it.visitedAreas.subList(1, it.visitedAreas.size)) {
+                val exitSlope = currentArea.exitSlopes.entries.first { it.value == nextArea }.key
+                val exitSlopeSides = listOf(exitSlope.backwards(input), exitSlope.forward(input))
+
+                val currentAreaLast = exitSlopeSides.first { it in currentArea.points }
+                val nextAreaFirst = exitSlopeSides.first { it in nextArea.points }
+
+                val pathToNextAreaEntrance = currentArea.getInnerPath(path.last(), currentAreaLast)
+
+                path.addAll(pathToNextAreaEntrance.subList(1, pathToNextAreaEntrance.size))
+                path.add(exitSlope)
+                path.add(nextAreaFirst)
+
+                currentArea = nextArea
             }
-        }.let { it.points.size } - 1
+            val pathToExit = currentArea.getInnerPath(path.last(), endPoint)
+            path.addAll(pathToExit.subList(1, pathToExit.size))
+            path
+        }.reduce { acc, next ->
+            (if (acc.size > next.size) acc else next).also {
+                debug {
+                    printCurrentBest(it.size - 1)
+                }
+            }
+        }.let { it.size - 1 }
     }
 
     override fun solvePart1(input: Array<String>): Any? {
-        return tryGraphCombinationsForLongestPathLength(input)
+        // return tryGraphCombinationsForLongestPathLength(input)
+        return null
     }
 
     override fun solvePart2(input: Array<String>): Any? {
         return tryGraphCombinationsForLongestPathLengthPt2(input)
-        return null
     }
 }
