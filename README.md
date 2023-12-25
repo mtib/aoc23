@@ -4,7 +4,11 @@ in Kotlin!
 
 ## Dependencies
 
-- Koin (for day resolution)
+- [Koin](https://insert-koin.io/) (for day resolution)
+- [JGraphT](https://jgrapht.org/) (for day 25)
+- [OkHTTP3](https://square.github.io/okhttp/) (for downloading the puzzle input)
+- [kotlinx-coroutines](https://kotlinlang.org/docs/coroutines-guide.html) (for running stuff in parallel)
+- [kotlinx-serialization](https://kotlinlang.org/docs/serialization.html) (for (de-)serializing persistent data)
 
 ## How to run
 
@@ -17,6 +21,9 @@ or build the jar and run it:
 gradle aocJar
 java -jar app/build/libs/aoc.jar <day>
 ```
+
+You can also move `.env.example` to `.env` and fill in your session cookie to automatically download the puzzle input.
+You may also be required to have `openscad` in the path.
 
 ### Example Output
 
